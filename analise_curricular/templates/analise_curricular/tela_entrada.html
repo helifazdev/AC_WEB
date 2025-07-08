@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAUPE Curricular</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            flex-direction: column; /* Para empilhar elementos verticalmente */
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: blue;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: red;
+            font-size: 2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{% static 'analise_curricular/IAUPE_Concursos.png' %}" alt="Logo IAUPE">
+        <h1>IAUPE CONCURSOS</h1>
+        <h2>Análise Curricular - UPE 2025</h2>
+    </div>
+
+    <script>
+        // Redireciona após 3 segundos (3000 milissegundos)
+        setTimeout(function() {
+            window.location.href = "{% url 'analisar_candidato' %}";
+        }, 3000);
+    </script>
+</body>
+</html>

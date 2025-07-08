@@ -1,0 +1,286 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IAUPE CONCURSOS - Análise curricular UPE 2025</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .radio-group label {
+            font-weight: normal;
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 5px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn.disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .messages {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .messages li {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        #div_id_justificativa {
+            display: none;
+        }
+
+        /* Estilos para o Modal de Alerta */
+        .modal {
+            display: none; /* Escondido por padrão */
+            position: fixed; /* Fica no topo da tela */
+            z-index: 1; /* Fica na frente de tudo */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; /* Habilita scroll se necessário */
+            background-color: rgba(0,0,0,0.4); /* Fundo escuro semitransparente */
+            justify-content: center; /* Centraliza horizontalmente */
+            align-items: center; /* Centraliza verticalmente */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% do topo e centralizado */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Largura do modal */
+            max-width: 500px;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+        }
+        .modal-header {
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header h2 {
+            color: #ffc107; /* Cor de aviso */
+            margin: 0;
+        }
+        .modal-body {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        .modal-footer {
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        .modal-footer .btn {
+            background-color: #007bff;
+        }
+        .modal-footer .btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Análise Curricular - UPE 2025</h1>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="form-group">
+                    {% if field.name == 'requisito' or field.name == 'avaliacao' %}
+                        <label>{{ field.label_tag }}</label>
+                        <div class="radio-group">
+                            {{ field }}
+                        </div>
+                    {% elif field.name == 'justificativa' %}
+                        <div id="div_id_justificativa" class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label_tag }}</label>
+                            {{ field }}
+                        </div>
+                    {% else %}
+                        <label for="{{ field.id_for_label }}">{{ field.label_tag }}</label>
+                        {{ field }}
+                        {% if field.name == 'comprovante_formacao' and field.value %}
+                            <p>Arquivo atual: <a href="{{ field.value.url }}" target="_blank">{{ field.value.name }}</a></p>
+                        {% endif %}
+                    {% endif %}
+                    {% if field.errors %}
+                        <ul class="errorlist">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <div class="navigation-buttons">
+                {% if anterior_candidato_id %}
+                    <a href="{% url 'analisar_candidato_com_id' anterior_candidato_id %}" class="btn">Anterior</a>
+                {% else %}
+                    <a href="#" class="btn disabled">Anterior</a>
+                {% endif %}
+
+                <button type="submit" class="btn">Próximo</button>
+            </div>
+        </form>
+
+        <div class="footer">
+            Candidato {{ indice_atual }} de {{ total_candidatos }} | Data: {{ data_hoje }}
+        </div>
+    </div>
+
+    <div id="requisitoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Aviso Importante!</h2>
+            </div>
+            <div class="modal-body">
+                <p>Esse candidato já está eliminado de acordo com item 5.2.6 do Edital, mas vamos continuar a análise!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="closeModalBtn">Ok, entendi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const avaliacaoRadios = document.querySelectorAll('input[name="avaliacao"]');
+            const justificativaDiv = document.getElementById('div_id_justificativa');
+            const justificativaInput = document.getElementById('id_justificativa');
+
+            function toggleJustificativa() {
+                let showJustificativa = false;
+                avaliacaoRadios.forEach(radio => {
+                    if (radio.checked && radio.value === 'Nao possui') {
+                        showJustificativa = true;
+                    }
+                });
+
+                if (showJustificativa) {
+                    justificativaDiv.style.display = 'block';
+                    justificativaInput.setAttribute('required', 'required');
+                } else {
+                    justificativaDiv.style.display = 'none';
+                    justificativaInput.removeAttribute('required');
+                    justificativaInput.value = '';
+                }
+            }
+
+            avaliacaoRadios.forEach(radio => {
+                radio.addEventListener('change', toggleJustificativa);
+            });
+
+            toggleJustificativa();
+
+            // Lógica do Modal de Alerta para Requisito "Nao"
+            const requisitoRadios = document.querySelectorAll('input[name="requisito"]');
+            const requisitoModal = document.getElementById('requisitoModal');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            function showRequisitoModal() {
+                requisitoModal.style.display = 'flex'; // Usar flex para centralizar
+            }
+
+            function hideRequisitoModal() {
+                requisitoModal.style.display = 'none';
+            }
+
+            requisitoRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'Nao') {
+                        showRequisitoModal();
+                    }
+                });
+            });
+
+            closeModalBtn.addEventListener('click', hideRequisitoModal);
+
+            // Fechar modal ao clicar fora dele
+            window.addEventListener('click', function(event) {
+                if (event.target == requisitoModal) {
+                    hideRequisitoModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
