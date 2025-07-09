@@ -1,0 +1,491 @@
+/* Reset e Variáveis */
+:root {
+    --primary-color: #0e73d8;
+    --secondary-color: #3498db;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --light-gray: #ecf0f1;
+    --medium-gray: #bdc3c7;
+    --dark-gray: #7f8c8d;
+    --text-color: #223446;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f5f7fa;
+    color: var(--text-color);
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Layout Principal */
+.app-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    box-shadow: var(--box-shadow);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+/* Cabeçalho */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.app-header h1 {
+    font-size: 24px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo {
+    height: 40px;
+}
+
+.candidate-counter {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+/* Formulário */
+.evaluation-form {
+    padding: 20px;
+}
+
+/* Seções */
+.candidate-card,
+.evaluation-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background-color: white;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--light-gray);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--light-gray);
+}
+
+/* Campos do Formulário */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    font-family: inherit;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+input[type="text"]:read-only,
+input[type="number"]:read-only {
+    background-color: var(--light-gray);
+    cursor: not-allowed;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Opções de Radio */
+.radio-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+}
+
+.radio-option input[type="radio"] {
+    display: none;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: var(--border-radius);
+    transition: all 0.2s;
+    width: 100%;
+}
+
+.radio-label:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.radio-button {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 50%;
+    margin-right: 12px;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.radio-option input[type="radio"]:checked + .radio-label .radio-button {
+    border-color: var(--secondary-color);
+    background-color: var(--secondary-color);
+}
+
+.radio-option input[type="radio"]:checked + .radio-label .radio-button::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+}
+
+.radio-text {
+    font-size: 16px;
+}
+
+/* Erros do Formulário */
+.form-error {
+    color: var(--danger-color);
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Navegação */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--light-gray);
+}
+
+.nav-button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-button.next {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.nav-button.next:hover {
+    background-color: #2980b9;
+}
+
+.nav-button.prev {
+    background-color: var(--light-gray);
+    color: var(--text-color);
+}
+
+.nav-button.prev:hover {
+    background-color: #d5dbdb;
+}
+
+.nav-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Rodapé */
+.app-footer {
+    padding: 15px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 14px;
+}
+
+.footer-info {
+    display: flex;
+    justify-content: space-between;
+}
+
+.date-info,
+.system-info {
+    opacity: 0.8;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-icon {
+    font-size: 40px;
+    margin-bottom: 15px;
+    color: var(--warning-color);
+}
+
+.modal-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.modal-message {
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.modal-button {
+    padding: 10px 20px;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.modal-button:hover {
+    background-color: #2980b9;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .form-navigation {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .nav-button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .footer-info {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
+}
+/* Estilos para os radio buttons */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+}
+
+.radio-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    padding-left: 32px;
+    min-height: 24px;
+    user-select: none;
+}
+
+.radio-custom {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #7f8c8d;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.radio-text {
+    margin-left: 10px;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+/* Estado hover */
+.radio-label:hover .radio-custom {
+    border-color: #3498db;
+}
+
+/* Estado checked */
+.radio-option input[type="radio"]:checked ~ .radio-label .radio-custom {
+    border-color: #3498db;
+    background-color: #3498db;
+}
+
+.radio-option input[type="radio"]:checked ~ .radio-label .radio-custom::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: white;
+}
+
+/* Estado foco */
+.radio-option input[type="radio"]:focus ~ .radio-label .radio-custom {
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+}
+
+/* Estado desabilitado */
+.radio-option input[type="radio"]:disabled ~ .radio-label {
+    color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.radio-option input[type="radio"]:disabled ~ .radio-label .radio-custom {
+    border-color: #bdc3c7;
+    background-color: #ecf0f1;
+}
+/* Dentro de style.css */
+
+/* Agrupamento de Informações do Candidato */
+.candidate-info-group {
+    display: flex;
+    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas menores */
+    gap: 20px; /* Espaço entre os campos */
+    margin-bottom: 20px;
+    /* Você pode adicionar um background ou borda se quiser um destaque visual */
+    /* background-color: var(--light-gray); */
+    /* padding: 15px; */
+    /* border-radius: var(--border-radius); */
+}
+
+.candidate-info-group .form-group {
+    flex: 1 1 calc(33% - 20px); /* Ajusta para 3 colunas, com um pequeno espaço */
+    min-width: 250px; /* Garante que os campos não fiquem muito pequenos */
+    margin-bottom: 0; /* Remove a margem inferior padrão do form-group para este contexto */
+}
+
+@media (max-width: 768px) {
+    .candidate-info-group .form-group {
+        flex: 1 1 100%; /* Uma coluna em telas menores */
+    }
+}
+/* No seu style.css */
+
+/* Alinhamento de texto (se não existir) */
+.text-center {
+    text-align: center;
+}
+
+/* Margem inferior para parágrafos (se não existir e precisar) */
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* Botão grande (se quiser que seja maior que os nav-buttons padrão) */
+.large-button {
+    padding: 15px 30px; /* Um pouco mais de padding */
+    font-size: 18px; /* Texto um pouco maior */
+    margin-top: 20px; /* Para dar espaço acima do botão */
+    display: inline-block; /* Para que a margem superior e padding funcionem bem em <a> */
+}
+
+/* Ícone de check para mensagem de sucesso (se quiser uma cor diferente) */
+.checkmark-icon {
+    color: var(--success-color); /* Usa a cor de sucesso definida nas variáveis */
+    font-size: 50px; /* Ícone maior */
+    margin-bottom: 20px;
+}
+
+/* Ajustes para a seção de mensagem de sucesso */
+.success-message-section {
+    padding: 40px 20px; /* Mais padding para centralizar bem o conteúdo */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centraliza os itens verticalmente */
+    justify-content: center; /* Centraliza os itens horizontalmente */
+    min-height: 250px; /* Altura mínima para o conteúdo não ficar espremido */
+}
