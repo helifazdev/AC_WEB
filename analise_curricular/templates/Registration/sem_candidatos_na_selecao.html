@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sem Candidatos</title>
+    <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><img src="{% static 'images/logo.png' %}" alt="IAUPE" class="logo"> Análise Curricular</h1>
+        </header>
+
+        <section class="evaluation-section text-center">
+            <div class="modal-icon warning-icon">⚠️</div>
+            <h2 class="section-title">Nenhum Candidato Encontrado</h2>
+            <p>Não há candidatos disponíveis para análise na seleção "{{ selecao_nome }}".</p>
+            <p>Por favor, verifique se a seleção foi configurada corretamente e se os candidatos foram associados.</p>
+            <a href="{% url 'selecionar_selecao' %}" class="nav-button prev large-button">
+                &larr; Voltar para Seleção
+            </a>
+            {% if request.user.is_superuser %}
+                <p class="mt-20">Como superusuário, você pode <a href="{% url 'admin:analise_curricular_candidato_changelist' %}" class="link-styled" target="_blank">adicionar candidatos</a> ou <a href="{% url 'admin:analise_curricular_selecao_changelist' %}" class="link-styled" target="_blank">gerenciar seleções</a> no Admin.</p>
+            {% endif %}
+        </section>
+
+        <footer class="app-footer">
+            <div class="footer-info">
+                <span class="system-info">Sistema de Análise Curricular - IAUPE</span>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

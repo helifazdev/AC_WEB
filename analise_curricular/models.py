@@ -1,12 +1,16 @@
 from django.db import models
-
-# Create your models here.
-
-# analise_curricular/models.py
-
-from django.db import models
+from datetime import date # Importar para data_analise default
 
 class Candidato(models.Model):
+    
+    selecao = models.ForeignKey(
+        'Selecao', # Use 'Selecao' como string se Selecao for definido depois de Candidato
+        on_delete=models.SET_NULL,
+        null=True,     # Permite valores nulos no banco de dados
+        blank=True,    # Permite campos vazios no formulário
+        related_name='candidatos_da_selecao',
+        verbose_name="Seleção"
+    )
     # Dados Pessoais do Candidato
     nome = models.CharField(max_length=255, verbose_name="Nome do Candidato")
     inscricao = models.CharField(max_length=50, unique=True, verbose_name="Número de Inscrição")
@@ -89,3 +93,17 @@ class Candidato(models.Model):
         # Atualiza a pontuação antes de salvar o objeto
         self.calcular_pontuacao()
         super().save(*args, **kwargs)
+        
+# MODELO: Selecao
+class Selecao(models.Model):
+    nome = models.CharField(max_length=200, unique=True, verbose_name="Nome da Seleção")
+    descricao = models.TextField(blank=True, verbose_name="Descrição")
+    ativa = models.BooleanField(default=True, verbose_name="Ativa para Avaliação")
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        verbose_name = "Seleção"
+        verbose_name_plural = "Seleções"
+

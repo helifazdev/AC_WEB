@@ -1,0 +1,46 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selecionar Seleção</title>
+    <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><img src="{% static 'images/logo.png' %}" alt="IAUPE" class="logo"> Selecionar Avaliação</h1>
+        </header>
+
+        <section class="evaluation-section">
+            <h2 class="section-title">Escolha a Seleção Disponível</h2>
+            <form method="post" class="evaluation-form">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="form-error">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-group">
+                    <label for="{{ form.selecao_disponivel.id_for_label }}">{{ form.selecao_disponivel.label }}:</label>
+                    {{ form.selecao_disponivel }}
+                    {% if form.selecao_disponivel.errors %}
+                        <div class="form-error">{{ form.selecao_disponivel.errors }}</div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="nav-button next large-button">Iniciar Análise</button>
+            </form>
+        </section>
+
+        <footer class="app-footer">
+            <div class="footer-info">
+                <span class="system-info">Sistema de Análise Curricular - IAUPE</span>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

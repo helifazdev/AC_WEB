@@ -489,3 +489,69 @@ textarea:focus {
     justify-content: center; /* Centraliza os itens horizontalmente */
     min-height: 250px; /* Altura mínima para o conteúdo não ficar espremido */
 }
+
+.link-styled {
+    color: var(--secondary-color); /* Sua cor azul */
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease-in-out;
+}
+
+.link-styled:hover {
+    color: #2980b9; /* Um tom mais escuro ao passar o mouse */
+    text-decoration: underline;
+}
+
+/* Utilitário para margem superior (se não tiver) */
+.mt-20 {
+    margin-top: 20px;
+}
+/* Estilos para a lista de documentos */
+.document-list {
+    list-style: none; /* Remove marcadores de lista padrão */
+    padding: 0;
+    margin-top: 15px;
+}
+
+.document-list li {
+    margin-bottom: 10px;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+.document-list li:hover {
+    background-color: var(--medium-gray);
+}
+
+.document-link {
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%; /* Faz o link ocupar toda a largura do item da lista */
+}
+
+.document-icon {
+    font-size: 20px;
+    color: var(--secondary-color);
+}
+
+.no-documents-message {
+    font-style: italic;
+    color: var(--dark-gray);
+    text-align: center;
+    margin-top: 15px;
+}
+/* No seu style.css */
+.selection-name {
+    font-size: 18px; /* Ajuste o tamanho conforme desejar */
+    color: rgba(255, 255, 255, 0.8); /* Cor mais clara para contraste */
+    margin-left: 10px;
+    font-weight: 400;
+}

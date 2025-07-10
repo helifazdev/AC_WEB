@@ -1,10 +1,9 @@
 # analise_curricular/forms.py
 
 from django import forms
-from .models import Candidato
+from .models import Candidato, Selecao
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm # <--- Adicione esta linha
 
-# Adicione estas tuplas de choices se não estiverem no seu models.py
-# Ou se você quiser gerenciar as opções aqui no forms.py
 REQUISITO_CHOICES = [
     ('', 'Selecione uma opção'), # Opção vazia para validação de "não marcado"
     ('Sim', 'Sim'),
@@ -92,3 +91,25 @@ class CandidatoForm(forms.ModelForm):
              cleaned_data['justificativa'] = '' # Limpa o campo se não for necessário para evitar dados indesejados
 
         return cleaned_data
+    
+    # NOVO: Formulário de Cadastro para Avaliadores
+class AvaliadorSignUpForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        fields = UserCreationForm.Meta.fields + ('email',) # Opcional: Adicionar campo de email
+        # Se quiser adicionar outros campos personalizados ao seu usuário,
+        # você precisaria criar um Custom User Model. Por enquanto, focaremos no básico.
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name, field in self.fields.items():
+            field.widget.attrs.update({'class': 'form-control'})
+
+# NOVO FORMULÁRIO: SelecaoForm
+class SelecaoForm(forms.Form):
+    selecao_disponivel = forms.ModelChoiceField(
+        queryset=Selecao.objects.filter(ativa=True).order_by('nome'),
+        empty_label="Selecione uma Seleção para Avaliar",
+        label="Seleção Disponível",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )

@@ -134,3 +134,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# seu_projeto/settings.py
+
+# ... no final do arquivo ou perto de outras configurações de URL
+
+LOGIN_REDIRECT_URL = '/selecionar-selecao/'  # URL para onde o usuário será redirecionado após o login bem-sucedido
+                                 # (Vamos usar a página de análise como destino)
+LOGOUT_REDIRECT_URL = '/login/'  # URL para onde o usuário será redirecionado após o logout
+                                # (Pode ser a página de login novamente ou a tela inicial)
+LOGIN_URL = '/login/'            # URL para a página de login. Django usa isso para redirecionar usuários não autenticados.
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
