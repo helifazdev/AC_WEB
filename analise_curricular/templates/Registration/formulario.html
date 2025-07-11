@@ -4,47 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IAUPE - Análise Curricular UPE 2025</title>
+    <title>IAUPE - Análise Curricular UPE {{ data_hoje|date:"Y" }}</title>
     <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
-<header class="app-header">
-    <h1>
-        <img src="{% static 'images/logo.png' %}" alt="IAUPE" class="logo"> Análise Curricular
-        {% if selecao_nome %}
-            <span class="selection-name"> - {{ selecao_nome }}</span>
-        {% endif %}
-    </h1>
-    <div class="candidate-counter">Candidato {{ indice_atual }} de {{ total_candidatos }}</div>
-</header>
 <body>
     <div class="app-container">
+        <!-- Cabeçalho único (removi a duplicação) -->
         <header class="app-header">
-            <h1><img src="{% static 'images/logo.png' %}" alt="IAUPE" class="logo"> Análise Curricular</h1>
+            <h1>
+                <img src="{% static 'icone_IAUPE.ico' %}" alt="IAUPE" class="logo"> Análise Curricular
+                {% if selecao_nome %}
+                    <span class="selection-name"> - {{ selecao_nome }}</span>
+                {% endif %}
+            </h1>
             <div class="candidate-counter">Candidato {{ indice_atual }} de {{ total_candidatos }}</div>
         </header>
 
-        <form method="post" enctype="multipart/form-data" class="evaluation-form">
+        <form method="post" enctype="multipart/form-data" class="evaluation-form" id="evaluationForm">
             {% csrf_token %}
-            
+
+            <!-- Seção de Dados do Candidato -->
             <section class="candidate-card">
                 <h2 class="section-title">Dados do Candidato</h2>
                 <div class="candidate-info-group">
-                    <div class="form-group">
-                        <label for="{{ form.nome.id_for_label }}">Nome do Candidato:</label>
-                        {{ form.nome }}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.inscricao.id_for_label }}">Número de Inscrição:</label>
-                        {{ form.inscricao }}
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.cargo.id_for_label }}">Cargo/Função:</label>
-                        {{ form.cargo }}
-                    </div>
+                    {% for field in form.visible_fields %}
+                        {% if field.name in 'nome,inscricao,cargo' %}
+                        <div class="form-group">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="form-error">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
             </section>
 
+            <!-- Seção de Documentos -->
             <section class="evaluation-section">
                 <h2 class="section-title">Documentos do Candidato</h2>
                 {% if documentos_candidato %}
@@ -62,27 +60,25 @@
                 {% endif %}
             </section>
 
-            <section class="evaluation-section">
-                <h2 class="section-title">{{ form.requisito.label }}</h2>
-                <div class="form-group">
-                    {{ form.requisito }} {# Renderiza o campo Select #}
-                    {% if form.requisito.errors %}
-                        <div class="form-error">{{ form.requisito.errors }}</div>
-                    {% endif %}
-                </div>
-            </section>
+            <!-- Seções de Avaliação Dinâmicas -->
+            {% for field in form.visible_fields %}
+                {% if field.name not in 'nome,inscricao,cargo,justificativa,observacao' %}
+                <section class="evaluation-section">
+                    <h2 class="section-title">{{ field.label }}</h2>
+                    <div class="form-group">
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="form-error">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                </section>
+                {% endif %}
+            {% endfor %}
 
-            <section class="evaluation-section">
-                <h2 class="section-title">{{ form.avaliacao.label }}</h2>
+            <!-- Seção de Justificativa (condicional) -->
+            <section class="evaluation-section" id="justificativa-section" style="display: none;">
+                <h2 class="section-title">{{ form.justificativa.label }}</h2>
                 <div class="form-group">
-                    {{ form.avaliacao }} {# Renderiza o campo Select #}
-                    {% if form.avaliacao.errors %}
-                        <div class="form-error">{{ form.avaliacao.errors }}</div>
-                    {% endif %}
-                </div>
-
-                <div id="justificativa-container" class="form-group" style="display: none;">
-                    <label for="{{ form.justificativa.id_for_label }}">{{ form.justificativa.label }}:</label>
                     {{ form.justificativa }}
                     {% if form.justificativa.errors %}
                         <div class="form-error">{{ form.justificativa.errors }}</div>
@@ -90,6 +86,7 @@
                 </div>
             </section>
 
+            <!-- Seção de Observações -->
             <section class="evaluation-section">
                 <h2 class="section-title">{{ form.observacao.label }}</h2>
                 <div class="form-group">
@@ -100,31 +97,31 @@
                 </div>
             </section>
 
+            <!-- Navegação -->
             <div class="form-navigation">
                 {% if anterior_candidato_id %}
                     <a href="{% url 'analisar_candidato_com_id' anterior_candidato_id %}" class="nav-button prev">
                         &larr; Anterior
                     </a>
                 {% else %}
-                    <button type="button" class="nav-button prev disabled" disabled>
-                        &larr; Anterior
-                    </button>
+                    <span class="nav-button prev disabled">&larr; Anterior</span>
                 {% endif %}
-                
-                <button type="submit" class="nav-button next">
-                    Próximo &rarr;
+
+                <button type="submit" class="nav-button next" id="submitButton">
+                    {% if indice_atual == total_candidatos %}Finalizar{% else %}Próximo &rarr;{% endif %}
                 </button>
             </div>
         </form>
 
         <footer class="app-footer">
             <div class="footer-info">
-                <span class="date-info">{{ data_hoje }}</span>
+                <span class="date-info">{{ data_formatada }}</span>
                 <span class="system-info">Sistema de Análise Curricular - IAUPE</span>
             </div>
         </footer>
     </div>
 
+    <!-- Modal de Alerta -->
     <div id="alertModal" class="modal">
         <div class="modal-content">
             <div class="modal-icon">⚠️</div>
@@ -134,108 +131,114 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Elementos do formulário
-            const form = document.querySelector('.evaluation-form');
-            // Mude para selecionar os campos Select
-            const requisitoSelect = document.getElementById('id_requisito');
-            const avaliacaoSelect = document.getElementById('id_avaliacao');
-            const justificativaContainer = document.getElementById('justificativa-container');
-            const justificativaTextarea = document.getElementById('id_justificativa');
-            
-            // Elementos do modal
-            const modal = document.getElementById('alertModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalMessage = document.getElementById('modalMessage');
-            const modalButton = document.getElementById('modalButton');
-            
-            // Mostrar/ocultar justificativa (adaptado para Select)
-            function toggleJustificativa() {
-                // Pega o valor selecionado do Select de avaliação
-                const selectedAvaliacaoValue = avaliacaoSelect.value;
-                
-                if (selectedAvaliacaoValue === 'Nao possui') {
-                    justificativaContainer.style.display = 'block';
-                    justificativaTextarea.required = true;
-                } else {
-                    justificativaContainer.style.display = 'none';
-                    justificativaTextarea.required = false;
-                    justificativaTextarea.value = ''; // Limpa o valor quando oculta
-                }
-            }
-            
-            // Mostrar modal de alerta
-            function showAlert(title, message) {
-                modalTitle.textContent = title;
-                modalMessage.textContent = message;
-                modal.style.display = 'flex';
-            }
-            
-            // Event listeners (adaptado para Select)
-            avaliacaoSelect.addEventListener('change', toggleJustificativa);
-            
-            requisitoSelect.addEventListener('change', function() {
-                // Se a opção selecionada for a placeholder, não faz nada (será validada no submit)
-                if (this.value === '') { // O valor da opção "Selecione uma opção" é vazio
-                    return;
-                }
-                if (this.value === 'Sim') { // O valor da opção "Sim" (atende aos requisitos)
-                    showAlert(
-                        'Candidato Eliminado', 
-                        'Este candidato não atende aos requisitos básicos para o cargo conforme edital.'
-                    );
-                }
-            });
-            
-            modalButton.addEventListener('click', function() {
-                modal.style.display = 'none';
-            });
-            
-            // Validação do formulário (adaptado para Select)
-            form.addEventListener('submit', function(e) {
-                const selectedRequisitoValue = requisitoSelect.value;
-                const selectedAvaliacaoValue = avaliacaoSelect.value;
-                
-                // Validação para "Requisitos para o Cargo" (valor vazio é '')
-                if (selectedRequisitoValue === '') {
-                    e.preventDefault();
-                    showAlert(
-                        'Campo Obrigatório', 
-                        'Por favor, selecione uma opção em "Possui Requisitos para o Cargo?".'
-                    );
-                    return;
-                }
-                
-                // Validação para "Avaliação Curricular" (valor vazio é '')
-                if (selectedAvaliacaoValue === '') {
-                    e.preventDefault();
-                    showAlert(
-                        'Campo Obrigatório', 
-                        'Por favor, selecione uma opção em "Avaliação Curricular".'
-                    );
-                    return;
-                }
-                
-                // Validação da Justificativa
-                if (selectedAvaliacaoValue === 'Nao possui' && !justificativaTextarea.value.trim()) {
-                    e.preventDefault();
-                    showAlert(
-                        'Justificativa Necessária', 
-                        'Por favor, informe a justificativa para "Não possui" na avaliação curricular.'
-                    );
-                    return;
-                }
-            });
-            
-            // Inicialização
-            toggleJustificativa();
-            
-            // Verifica se a justificativa deve ser exibida inicialmente
-            if (avaliacaoSelect.value === 'Nao possui') {
-                justificativaContainer.style.display = 'block';
-            }
-        });
-    </script>
+   <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elementos do formulário
+    const form = document.querySelector('.evaluation-form');
+    const requisitoSelect = document.getElementById('id_requisito');
+    const avaliacaoSelect = document.getElementById('id_avaliacao');
+    const justificativaContainer = document.getElementById('justificativa-container');
+    const justificativaTextarea = document.getElementById('id_justificativa');
+    
+    // Elementos do modal
+    const modal = document.getElementById('alertModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalButton = document.getElementById('modalButton');
+
+    // Mostrar/ocultar justificativa baseado na seleção
+    function toggleJustificativa() {
+        if (avaliacaoSelect.value === 'Nao possui') {
+            justificativaContainer.style.display = 'block';
+            justificativaTextarea.required = true;
+        } else {
+            justificativaContainer.style.display = 'none';
+            justificativaTextarea.required = false;
+        }
+    }
+
+    // Mostrar mensagem de alerta
+    function showAlert(title, message, isWarning = false) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        
+        // Altera a cor do título baseado no tipo de alerta
+        if (isWarning) {
+            modalTitle.style.color = '#FFA500'; // Laranja para avisos
+            modalIcon.textContent = '⚠️';
+        } else {
+            modalTitle.style.color = '#D32F2F'; // Vermelho para erros
+            modalIcon.textContent = '❌';
+        }
+        
+        modal.style.display = 'flex';
+    }
+
+    // Fechar modal
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    // Evento para mostrar aviso quando requisito for "Não"
+    requisitoSelect.addEventListener('change', function() {
+        if (this.value === 'Nao') {
+            showAlert(
+                'Aviso - Candidato Eliminado', 
+                'O candidato está eliminado por não possuir os requisitos necessários para o cargo. Você pode continuar com a avaliação.',
+                true
+            );
+        }
+    });
+
+    // Evento para mostrar/ocultar justificativa
+    avaliacaoSelect.addEventListener('change', toggleJustificativa);
+
+    // Evento para fechar modal
+    modalButton.addEventListener('click', closeModal);
+
+    // Validação ao enviar o formulário
+    form.addEventListener('submit', function(e) {
+        let hasError = false;
+        
+        // Verifica se "Possui requisito" está selecionado
+        if (requisitoSelect.value === '' || requisitoSelect.value === null) {
+            showAlert(
+                'Campo Obrigatório', 
+                'Por favor, selecione uma opção em "Possui Requisitos para o Cargo?".'
+            );
+            hasError = true;
+        }
+        
+        // Verifica se "Avaliação" está selecionado
+        else if (avaliacaoSelect.value === '' || avaliacaoSelect.value === null) {
+            showAlert(
+                'Campo Obrigatório', 
+                'Por favor, selecione uma opção em "Avaliação Curricular".'
+            );
+            hasError = true;
+        }
+        
+        // Verifica se justificativa foi preenchida quando necessário
+        else if (avaliacaoSelect.value === 'Nao possui' && !justificativaTextarea.value.trim()) {
+            showAlert(
+                'Justificativa Necessária', 
+                'Por favor, informe a justificativa para "Não possui" na avaliação curricular.'
+            );
+            hasError = true;
+        }
+
+        // Impede o envio se houver erros
+        if (hasError) {
+            e.preventDefault();
+            // Rola para o topo para mostrar o modal
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    // Inicializa a visibilidade da justificativa
+    toggleJustificativa();
+});
+</script>
+
 </body>
 </html>

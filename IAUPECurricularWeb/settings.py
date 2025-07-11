@@ -147,3 +147,20 @@ LOGIN_URL = '/login/'            # URL para a página de login. Django usa isso 
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Defina o idioma padrão
+LANGUAGE_CODE = 'pt-br'
+
+# Defina o fuso horário (para o Brasil use America/Sao_Paulo)
+TIME_ZONE = 'America/Sao_Paulo'
+
+# Ative a internacionalização
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+# Adicione os formatos de data
+DATE_FORMAT = 'd/m/Y'
+DATETIME_FORMAT = 'd/m/Y H:i'
+SHORT_DATE_FORMAT = 'd/m/Y'
+SHORT_DATETIME_FORMAT = 'd/m/Y H:i'
