@@ -16,6 +16,9 @@ from django.utils.translation import gettext_lazy as _
 from .forms import CandidatoForm, AvaliadorSignUpForm, SelecaoForm, DocumentoForm
 from .models import Candidato, Selecao, DocumentoCandidato
 
+def inscricao_finalizada(request):
+    return render(request, 'Registration/inscricao_finalizada.html')
+
 def tela_entrada(request):
     return render(request, 'tela_entrada.html')
 
@@ -122,17 +125,6 @@ def user_logout(request):
     logout(request)
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
-def avaliador_signup(request):
-    if request.method == 'POST':
-        form = AvaliadorSignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect(settings.LOGIN_REDIRECT_URL)
-    else:
-        form = AvaliadorSignUpForm()
-    return render(request, 'registration/signup.html', {'form': form})
-
 @login_required
 def selecionar_selecao(request):
     if request.method == 'POST':
@@ -185,3 +177,14 @@ def deletar_documento(request, documento_id):
         return redirect('upload_documento', candidato_id=candidato_id)
     
     return render(request, 'confirmar_delete.html', {'documento': documento})
+
+def avaliador_signup(request):
+    if request.method == 'POST':
+        form = AvaliadorSignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('inscricao_finalizada')  # Redireciona para a página de confirmação
+    else:
+        form = AvaliadorSignUpForm()
+    return render(request, 'Registration/signup.html', {'form': form})

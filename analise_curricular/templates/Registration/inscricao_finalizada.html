@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscrição Finalizada</title>
+    <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+</head>
+<body>
+    <div class="container" style="max-width: 500px; margin: 60px auto; text-align: center;">
+         <img src="{% static 'analise_curricular/icone_IAUPE.ico' %}" alt="IAUPE" class="logo">
+        <h2>Inscrição realizada com sucesso!</h2>
+        <div class="modal-icon checkmark-icon">✔️</div>
+        <p>Você está inscrito. Em breve nossa equipe vai liberar o seu acesso.</p>
+        <p>Enquanto isso, verifique a confirmação da inscrição no seu e-mail.</p>
+        <a href="{% url 'tela_entrada' %}" class="btn btn-primary">Voltar para a página inicial</a>
+    </div>
+</body>
+</html>

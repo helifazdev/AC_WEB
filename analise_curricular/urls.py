@@ -23,4 +23,5 @@ urlpatterns = [
 
     path('candidato/<int:candidato_id>/documentos/', upload_documento, name='upload_documento'),
     path('documento/<int:documento_id>/deletar/', deletar_documento, name='deletar_documento'),
+    path('inscricao_finalizada/', views.inscricao_finalizada, name='inscricao_finalizada')
 ] 
