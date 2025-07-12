@@ -2,6 +2,8 @@
 
 from django.urls import path
 from . import views
+from .views import upload_documento, deletar_documento
+
 from django.contrib.auth import views as auth_views # Importar as views de autenticação padrão do Django
 
 urlpatterns = [
@@ -18,4 +20,7 @@ urlpatterns = [
     path('login/', views.user_login, name='login'), # Usaremos nossa view customizada
     path('logout/', views.user_logout, name='logout'), # Usaremos nossa view customizada
     path('signup/', views.avaliador_signup, name='signup'), # Nossa view de cadastro
-]
+
+    path('candidato/<int:candidato_id>/documentos/', upload_documento, name='upload_documento'),
+    path('documento/<int:documento_id>/deletar/', deletar_documento, name='deletar_documento'),
+] 

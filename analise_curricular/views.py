@@ -13,8 +13,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
-from .forms import CandidatoForm, AvaliadorSignUpForm, SelecaoForm
-from .models import Candidato, Selecao
+from .forms import CandidatoForm, AvaliadorSignUpForm, SelecaoForm, DocumentoForm
+from .models import Candidato, Selecao, DocumentoCandidato
 
 def tela_entrada(request):
     return render(request, 'tela_entrada.html')
@@ -146,3 +146,42 @@ def selecionar_selecao(request):
         form = SelecaoForm()
     
     return render(request, 'Registration/selecionar_selecao.html', {'form': form})
+
+@login_required
+def upload_documento(request, candidato_id):
+    candidato = get_object_or_404(Candidato, pk=candidato_id)
+    
+    if request.method == 'POST':
+        form = DocumentoForm(request.POST, request.FILES)
+        if form.is_valid():
+            documento = form.save(commit=False)
+            documento.candidato = candidato
+            documento.save()
+            
+            # Adiciona mensagem de sucesso
+            messages.success(request, f"Documento '{documento.get_tipo_display()}' enviado com sucesso!")
+            return redirect('analisar_candidato', candidato_id=candidato.id)
+    else:
+        form = DocumentoForm()
+    
+    # Busca documentos já enviados
+    documentos = candidato.documentos.all()
+    
+    context = {
+        'candidato': candidato,
+        'form': form,
+        'documentos': documentos,
+    }
+    return render(request, 'upload_documento.html', context)
+
+@login_required
+def deletar_documento(request, documento_id):
+    documento = get_object_or_404(DocumentoCandidato, pk=documento_id)
+    candidato_id = documento.candidato.id
+    
+    if request.method == 'POST':
+        documento.delete()
+        messages.success(request, "Documento excluído com sucesso!")
+        return redirect('upload_documento', candidato_id=candidato_id)
+    
+    return render(request, 'confirmar_delete.html', {'documento': documento})

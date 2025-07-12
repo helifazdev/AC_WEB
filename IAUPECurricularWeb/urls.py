@@ -23,7 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     path('', include('analise_curricular.urls')), # Inclui as URLs do seu aplicativo aqui
-]
+    
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # IAUPECurricularWeb/IAUPECurricularWeb/urls.py
 

@@ -2,22 +2,22 @@
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Candidato, Selecao
+from .models import Candidato, Selecao, DocumentoCandidato
 
 class CandidatoForm(forms.ModelForm):
     REQUISITO_CHOICES = [
         ('', 'Selecione uma opção'),
         ('Sim', 'Sim'),
-        ('Nao', 'Não'),
+        ('Nao', 'Nao'),
     ]
     
     AVALIACAO_CHOICES = [
         ('', 'Selecione uma opção'),
-        ('Graduacao', 'Graduação'),
-        ('Especializacao', 'Especialização'),
+        ('Graduacao', 'Graduacao'),
+        ('Especializacao', 'Especializacao'),
         ('Mestrado', 'Mestrado'),
         ('Doutorado', 'Doutorado'),
-        ('Nao possui', 'Não possui'),
+        ('Nao possui', 'Nao possui'),
     ]
 
     requisito = forms.ChoiceField(
@@ -101,3 +101,24 @@ class SelecaoForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=True
     )
+class DocumentoForm(forms.ModelForm):
+    class Meta:
+        model = DocumentoCandidato
+        fields = ['tipo', 'arquivo', 'observacoes']
+        widgets = {
+            'observacoes': forms.Textarea(attrs={'rows': 3}),
+        }
+    
+    def clean_arquivo(self):
+        arquivo = self.cleaned_data.get('arquivo')
+        if arquivo:
+            # Limita o tamanho (5MB)
+            if arquivo.size > 5*1024*1024:
+                raise forms.ValidationError("Arquivo muito grande (tamanho máximo: 5MB)")
+            
+            # Valida extensões permitidas
+            extensoes_validas = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']
+            if not any(arquivo.name.lower().endswith(ext) for ext in extensoes_validas):
+                raise forms.ValidationError("Tipo de arquivo não suportado. Use PDF, JPG, PNG ou DOC.")
+        
+        return arquivo

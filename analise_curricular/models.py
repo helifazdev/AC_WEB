@@ -116,3 +116,33 @@ class Candidato(models.Model):
         """Mantida sua lógica original de save"""
         self.calcular_pontuacao()
         super().save(*args, **kwargs)
+
+# models.py
+from django.db import models
+
+class DocumentoCandidato(models.Model):
+    TIPO_CHOICES = [
+        ('RG', 'Registro Geral'),
+        ('CPF', 'CPF'),
+        ('Diploma', 'Diploma'),
+        ('Comprovante', 'Comprovante de Experiência'),
+        ('Outro', 'Outro Documento'),
+    ]
+    
+    candidato = models.ForeignKey(
+        'Candidato',
+        on_delete=models.CASCADE,
+        related_name='documentos'
+    )
+    tipo = models.CharField(max_length=50, choices=TIPO_CHOICES)
+    arquivo = models.FileField(upload_to='candidatos/documentos/%Y/%m/%d/')
+    data_upload = models.DateTimeField(auto_now_add=True)
+    observacoes = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.candidato.nome}"
+
+    def delete(self, *args, **kwargs):
+        """Deleta o arquivo físico quando o modelo é apagado"""
+        self.arquivo.delete()
+        super().delete(*args, **kwargs)

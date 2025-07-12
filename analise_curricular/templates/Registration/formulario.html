@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -10,10 +11,13 @@
 </head>
 <body>
     <div class="app-container">
+        <script>
+    console.log("Script carregado!"); // Verifique no console do navegador se aparece
+</script>
         <!-- Cabeçalho único (removi a duplicação) -->
         <header class="app-header">
             <h1>
-                <img src="{% static 'icone_IAUPE.ico' %}" alt="IAUPE" class="logo"> Análise Curricular
+                <img src="{% static 'analise_curricular/icone_IAUPE.ico' %}" alt="IAUPE" class="logo"> Análise Curricular
                 {% if selecao_nome %}
                     <span class="selection-name"> - {{ selecao_nome }}</span>
                 {% endif %}
@@ -115,7 +119,7 @@
 
         <footer class="app-footer">
             <div class="footer-info">
-                <span class="date-info">{{ data_formatada }}</span>
+                <span class="date-info">Hoje é {% now "j \d\e F \d\e Y" %}</span>
                 <span class="system-info">Sistema de Análise Curricular - IAUPE</span>
             </div>
         </footer>
@@ -131,24 +135,42 @@
         </div>
     </div>
 
-   <script>
+ <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Elementos do formulário
-    const form = document.querySelector('.evaluation-form');
-    const requisitoSelect = document.getElementById('id_requisito');
-    const avaliacaoSelect = document.getElementById('id_avaliacao');
-    const justificativaContainer = document.getElementById('justificativa-container');
+    // --- 1. SELEÇÃO DOS ELEMENTOS ---
+    const form = document.getElementById('evaluationForm');
+    const justificativaContainer = document.getElementById('justificativa-section');
     const justificativaTextarea = document.getElementById('id_justificativa');
-    
-    // Elementos do modal
     const modal = document.getElementById('alertModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalMessage = document.getElementById('modalMessage');
     const modalButton = document.getElementById('modalButton');
+    const modalIcon = document.querySelector('#alertModal .modal-icon');
 
-    // Mostrar/ocultar justificativa baseado na seleção
+    // Função para pegar valor selecionado dos radios
+    function getRadioValue(name) {
+        const checked = document.querySelector(`input[name="${name}"]:checked`);
+        return checked ? checked.value : '';
+    }
+
+    // --- 2. FUNÇÕES ---
+    function showAlert(title, message, isWarning = false) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalButton.textContent = 'Entendi!';
+        modalIcon.textContent = isWarning ? '⚠️' : '❌';
+        modalTitle.style.color = isWarning ? '#f0ad4e' : '#d9534f';
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
     function toggleJustificativa() {
-        if (avaliacaoSelect.value === 'Nao possui') {
+        const avaliacaoValue = getRadioValue('avaliacao');
+        const valorNaoPossui = 'Nao possui';
+        if (avaliacaoValue === valorNaoPossui) {
             justificativaContainer.style.display = 'block';
             justificativaTextarea.required = true;
         } else {
@@ -157,88 +179,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Mostrar mensagem de alerta
-    function showAlert(title, message, isWarning = false) {
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        
-        // Altera a cor do título baseado no tipo de alerta
-        if (isWarning) {
-            modalTitle.style.color = '#FFA500'; // Laranja para avisos
-            modalIcon.textContent = '⚠️';
-        } else {
-            modalTitle.style.color = '#D32F2F'; // Vermelho para erros
-            modalIcon.textContent = '❌';
-        }
-        
-        modal.style.display = 'flex';
-    }
-
-    // Fechar modal
-    function closeModal() {
-        modal.style.display = 'none';
-    }
-
-    // Evento para mostrar aviso quando requisito for "Não"
-    requisitoSelect.addEventListener('change', function() {
-        if (this.value === 'Nao') {
-            showAlert(
-                'Aviso - Candidato Eliminado', 
-                'O candidato está eliminado por não possuir os requisitos necessários para o cargo. Você pode continuar com a avaliação.',
-                true
-            );
-        }
+    // --- 3. EVENTOS ---
+    // Adiciona evento para todos radios de requisito
+    document.querySelectorAll('input[name="requisito"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            const valorNao = 'Nao';
+            if (this.value === valorNao) {
+                showAlert(
+                    'Candidato Eliminado',
+                    'O candidato não possui os requisitos mínimos para o cargo. A avaliação pode continuar, mas o status será de eliminado.',
+                    true
+                );
+            }
+        });
     });
 
-    // Evento para mostrar/ocultar justificativa
-    avaliacaoSelect.addEventListener('change', toggleJustificativa);
+    // Adiciona evento para todos radios de avaliacao
+    document.querySelectorAll('input[name="avaliacao"]').forEach(function(radio) {
+        radio.addEventListener('change', toggleJustificativa);
+    });
 
-    // Evento para fechar modal
     modalButton.addEventListener('click', closeModal);
 
-    // Validação ao enviar o formulário
-    form.addEventListener('submit', function(e) {
-        let hasError = false;
-        
-        // Verifica se "Possui requisito" está selecionado
-        if (requisitoSelect.value === '' || requisitoSelect.value === null) {
+    form.addEventListener('submit', function(event) {
+        const avaliacaoValue = getRadioValue('avaliacao');
+        const valorNaoPossui = 'Nao possui';
+        if (avaliacaoValue === valorNaoPossui && !justificativaTextarea.value.trim()) {
+            event.preventDefault();
             showAlert(
-                'Campo Obrigatório', 
-                'Por favor, selecione uma opção em "Possui Requisitos para o Cargo?".'
+                'Justificativa Obrigatória',
+                'O campo "Justificativa" deve ser preenchido quando a avaliação é "Não possui".'
             );
-            hasError = true;
-        }
-        
-        // Verifica se "Avaliação" está selecionado
-        else if (avaliacaoSelect.value === '' || avaliacaoSelect.value === null) {
-            showAlert(
-                'Campo Obrigatório', 
-                'Por favor, selecione uma opção em "Avaliação Curricular".'
-            );
-            hasError = true;
-        }
-        
-        // Verifica se justificativa foi preenchida quando necessário
-        else if (avaliacaoSelect.value === 'Nao possui' && !justificativaTextarea.value.trim()) {
-            showAlert(
-                'Justificativa Necessária', 
-                'Por favor, informe a justificativa para "Não possui" na avaliação curricular.'
-            );
-            hasError = true;
-        }
-
-        // Impede o envio se houver erros
-        if (hasError) {
-            e.preventDefault();
-            // Rola para o topo para mostrar o modal
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 
-    // Inicializa a visibilidade da justificativa
+    // --- 4. INICIALIZAÇÃO ---
     toggleJustificativa();
 });
 </script>
+
 
 </body>
 </html>
