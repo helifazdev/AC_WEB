@@ -13,14 +13,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+#1) Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+#7) SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-yqrv_am0!5x9@hormc#mitn5&^rpf(2io_cjlk1mi_5*ntn_+0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -30,7 +30,7 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
+#2) Defina os aplicativos instalados
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'import_export',
     'analise_curricular',
 ]
-
+#3) Defina os middlewares
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -55,6 +55,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'IAUPECurricularWeb.urls'
 
+#4) Defina os templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -76,7 +77,7 @@ WSGI_APPLICATION = 'IAUPECurricularWeb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+#5) Defina o banco de dados
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -106,16 +107,17 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+#-------------------------------------------------------------------
+# Defina o idioma padrão
+LANGUAGE_CODE = 'pt-br'
+# Defina o fuso horário (para o Brasil use America/Sao_Paulo)
+TIME_ZONE = 'America/Sao_Paulo'
+# Ative a internacionalização
 USE_I18N = True
-
 USE_TZ = True
-
-# Defina STATIC_URL
+USE_TZ = True
+#-------------------------------------------------------------------
+#6) Defina STATIC_URL
 STATIC_URL = '/static/'
 
 # Onde o Django vai procurar os arquivos estáticos durante o desenvolvimento
@@ -147,17 +149,6 @@ LOGIN_URL = '/login/'            # URL para a página de login. Django usa isso 
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Defina o idioma padrão
-LANGUAGE_CODE = 'pt-br'
-
-# Defina o fuso horário (para o Brasil use America/Sao_Paulo)
-TIME_ZONE = 'America/Sao_Paulo'
-
-# Ative a internacionalização
-USE_I18N = True
-USE_L10N = True
-USE_TZ = True
 
 # Adicione os formatos de data
 DATE_FORMAT = 'd/m/Y'

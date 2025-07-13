@@ -53,14 +53,15 @@ def analisar_candidato(request, candidato_id=None):
     
     if os.path.exists(documentos_dir):
         for filename in os.listdir(documentos_dir):
-            if (candidato.inscricao in filename and 
-                os.path.isfile(os.path.join(documentos_dir, filename))):
+            # Verifica se o nome segue o padrão e corresponde à inscrição do candidato
+            partes = filename.split('_')
+            if len(partes) >= 3 and partes[1] == str(candidato.inscricao):
                 document_url = settings.MEDIA_URL + 'candidatos_documentos/' + filename
                 documentos_candidato.append({
+                    'tipo': partes[0],
                     'nome': filename,
                     'url': document_url,
                 })
-
     if request.method == 'POST':
         form = CandidatoForm(request.POST, instance=candidato)
         if form.is_valid():

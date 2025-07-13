@@ -64,36 +64,47 @@
                 {% endif %}
             </section>
 
-            <!-- Seções de Avaliação Dinâmicas -->
-            {% for field in form.visible_fields %}
-                {% if field.name not in 'nome,inscricao,cargo,justificativa,observacao' %}
-                <section class="evaluation-section">
-                    <h2 class="section-title">{{ field.label }}</h2>
-                    <div class="form-group">
-                        {{ field }}
-                        {% if field.errors %}
-                            <div class="form-error">{{ field.errors }}</div>
-                        {% endif %}
-                    </div>
-                </section>
-                {% endif %}
-            {% endfor %}
-
-            <!-- Seção de Justificativa (condicional) -->
-            <section class="evaluation-section" id="justificativa-section" style="display: none;">
-                <h2 class="section-title">{{ form.justificativa.label }}</h2>
+        <!-- Seções de Avaliação Dinâmicas -->
+        {% for field in form.visible_fields %}
+            {% if field.name not in 'nome,inscricao,cargo,justificativa,observacao,motivo_nao_possui' %}
+            <section class="evaluation-section">
+                <h2 class="section-title">{{ field.label }}</h2>
                 <div class="form-group">
-                    {{ form.justificativa }}
-                    {% if form.justificativa.errors %}
-                        <div class="form-error">{{ form.justificativa.errors }}</div>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="form-error">{{ field.errors }}</div>
                     {% endif %}
                 </div>
             </section>
+            {% endif %}
+        {% endfor %} 
 
-            <!-- Seção de Observações -->
-            <section class="evaluation-section">
-                <h2 class="section-title">{{ form.observacao.label }}</h2>
-                <div class="form-group">
+        <!-- Seção de Motivo (condicional) -->
+        <section class="evaluation-section" id="motivo-nao-possui-section" style="display: none;">
+            <h2 class="section-title">{{ form.motivo_nao_possui.label }}</h2>
+            <div class="form-group">
+                {{ form.motivo_nao_possui }}
+                {% if form.motivo_nao_possui.errors %}
+                    <div class="form-error">{{ form.motivo_nao_possui.errors }}</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Seção de Justificativa (condicional) -->
+        <section class="evaluation-section" id="justificativa-section" style="display: none;">
+            <h2 class="section-title">{{ form.justificativa.label }}</h2>
+            <div class="form-group">
+                {{ form.justificativa }}
+                {% if form.justificativa.errors %}
+                    <div class="form-error">{{ form.justificativa.errors }}</div>
+                {% endif %}
+            </div>
+ 
+        </section>
+        <!-- Seção de Observações -->
+        <section class="evaluation-section">
+            <h2 class="section-title">{{ form.observacao.label }}</h2>
+            <div class="form-group">
                     {{ form.observacao }}
                     {% if form.observacao.errors %}
                         <div class="form-error">{{ form.observacao.errors }}</div>
@@ -135,11 +146,12 @@
         </div>
     </div>
 
- <script>
+  <script>
 document.addEventListener('DOMContentLoaded', function() {
     // --- 1. SELEÇÃO DOS ELEMENTOS ---
     const form = document.getElementById('evaluationForm');
-    const justificativaContainer = document.getElementById('justificativa-section');
+    const motivoSection = document.getElementById('motivo-nao-possui-section');
+    const justificativaSection = document.getElementById('justificativa-section');
     const justificativaTextarea = document.getElementById('id_justificativa');
     const modal = document.getElementById('alertModal');
     const modalTitle = document.getElementById('modalTitle');
@@ -167,14 +179,25 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.style.display = 'none';
     }
 
-    function toggleJustificativa() {
+    function toggleMotivoEJustificativa() {
         const avaliacaoValue = getRadioValue('avaliacao');
-        const valorNaoPossui = 'Nao possui';
-        if (avaliacaoValue === valorNaoPossui) {
-            justificativaContainer.style.display = 'block';
-            justificativaTextarea.required = true;
+        
+        // Mostrar/ocultar motivo_nao_possui
+        if (avaliacaoValue === 'Nao possui') {
+            motivoSection.style.display = 'block';
+            
+            // Mostrar/ocultar justificativa se motivo for "Outros"
+            const motivoValue = getRadioValue('motivo_nao_possui');
+            if (motivoValue === 'outros') {
+                justificativaSection.style.display = 'block';
+                justificativaTextarea.required = true;
+            } else {
+                justificativaSection.style.display = 'none';
+                justificativaTextarea.required = false;
+            }
         } else {
-            justificativaContainer.style.display = 'none';
+            motivoSection.style.display = 'none';
+            justificativaSection.style.display = 'none';
             justificativaTextarea.required = false;
         }
     }
@@ -196,28 +219,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Adiciona evento para todos radios de avaliacao
     document.querySelectorAll('input[name="avaliacao"]').forEach(function(radio) {
-        radio.addEventListener('change', toggleJustificativa);
+        radio.addEventListener('change', toggleMotivoEJustificativa);
+    });
+
+    // Adiciona evento para todos radios de motivo_nao_possui
+    document.querySelectorAll('input[name="motivo_nao_possui"]').forEach(function(radio) {
+        radio.addEventListener('change', toggleMotivoEJustificativa);
     });
 
     modalButton.addEventListener('click', closeModal);
 
     form.addEventListener('submit', function(event) {
         const avaliacaoValue = getRadioValue('avaliacao');
-        const valorNaoPossui = 'Nao possui';
-        if (avaliacaoValue === valorNaoPossui && !justificativaTextarea.value.trim()) {
-            event.preventDefault();
-            showAlert(
-                'Justificativa Obrigatória',
-                'O campo "Justificativa" deve ser preenchido quando a avaliação é "Não possui".'
-            );
+        const motivoValue = getRadioValue('motivo_nao_possui');
+        
+        // Validação para quando "Não possui" está selecionado
+        if (avaliacaoValue === 'Nao possui') {
+            // Se motivo for "Outros" e justificativa estiver vazia
+            if (motivoValue === 'outros' && !justificativaTextarea.value.trim()) {
+                event.preventDefault();
+                showAlert(
+                    'Justificativa Obrigatória',
+                    'O campo "Justificativa" deve ser preenchido quando o motivo é "Outros".'
+                );
+                justificativaTextarea.focus();
+            }
+            // Se nenhum motivo estiver selecionado
+            else if (!motivoValue) {
+                event.preventDefault();
+                showAlert(
+                    'Motivo Obrigatório',
+                    'Por favor, selecione um motivo quando a avaliação é "Não possui".'
+                );
+            }
         }
     });
 
     // --- 4. INICIALIZAÇÃO ---
-    toggleJustificativa();
+    toggleMotivoEJustificativa(); // Configura o estado inicial dos campos
 });
 </script>
-
 
 </body>
 </html>

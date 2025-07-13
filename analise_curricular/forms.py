@@ -20,6 +20,14 @@ class CandidatoForm(forms.ModelForm):
         ('Nao possui', 'Nao possui'),
     ]
 
+    MOTIVO_NAO_POSSUI_CHOICES = [
+        ('', 'Selecione o motivo'),
+        ('sem_documentacao', 'Sem documentação'),
+        ('documentacao_invalida', 'Documentação inválida'),
+        ('documentacao_ilegivel', 'Documentação ilegível'),
+        ('outros', 'Outros'),
+    ]
+
     requisito = forms.ChoiceField(
         choices=REQUISITO_CHOICES,
         widget=forms.RadioSelect,
@@ -32,6 +40,13 @@ class CandidatoForm(forms.ModelForm):
         widget=forms.RadioSelect,
         required=True,
         label="Avaliação Curricular"
+    )
+
+    motivo_nao_possui = forms.ChoiceField(
+        choices=MOTIVO_NAO_POSSUI_CHOICES,
+        widget=forms.RadioSelect,
+        required=False,
+        label="Motivo para 'Não possui'"
     )
     
     justificativa = forms.CharField(
@@ -72,8 +87,12 @@ class CandidatoForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         avaliacao = cleaned_data.get('avaliacao')
+        motivo_nao_possui = cleaned_data.get('motivo_nao_possui')
         justificativa = cleaned_data.get('justificativa')
 
+        # Se "Nao possui" for selecionado, motivo é obrigatório
+        if avaliacao == 'Nao possui' and not motivo_nao_possui:
+            self.add_error('motivo_nao_possui', "Selecione o motivo para 'Não possui'.")    
         # Validação da justificativa
         if avaliacao == 'Nao possui' and not justificativa:
             self.add_error('justificativa', "Por favor, forneça uma justificativa para 'Não possui'")
