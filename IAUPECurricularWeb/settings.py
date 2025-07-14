@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'IAUPECurricularWeb.urls'
+ROOT_URLCONF = 'ACurricularWeb.urls'
 
 #4) Defina os templates
 TEMPLATES = [
@@ -72,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'IAUPECurricularWeb.wsgi.application'
+WSGI_APPLICATION = 'ACurricularWeb.wsgi.application'
 
 
 # Database

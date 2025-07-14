@@ -11,14 +11,14 @@
 <body>
     <div class="app-container">
         <header class="app-header">
-            <h1><img src="{% static 'analise_curricular/IAUPE_Concursos.png' %}" alt="IAUPE" class="logo"> Análise Curricular</h1>
+            <h1><img src="{% static 'Logo.ico' %}" alt="IAUPE" class="logo"> Análise Curricular</h1>
         </header>
 
         <section class="evaluation-section text-center success-message-section">
             <div class="modal-icon checkmark-icon">✔️</div> {# Pode usar um emoji ou um ícone de sua preferência #}
             <h2 class="section-title">Análise Finalizada!</h2>
             <p>Todos os candidatos foram analisados e as informações salvas com sucesso.</p>
-            <p class="mb-20">Obrigado por utilizar o sistema IAUPE Curricular.</p> {# Adicionei mb-20 para espaçamento, pode precisar de CSS #}
+            <p class="mb-20">Obrigado por utilizar o sistema Analise Curricular.</p> {# Adicionei mb-20 para espaçamento, pode precisar de CSS #}
             <a href="{% url 'tela_entrada' %}" class="nav-button prev large-button">
                 &larr; Reiniciar Análise
             </a>
@@ -27,7 +27,7 @@
         <footer class="app-footer">
             <div class="footer-info">
                 <span class="date-info">{{ data_hoje }}</span> {# Se data_hoje estiver disponível no contexto #}
-                <span class="system-info">Sistema de Análise Curricular - IAUPE</span>
+                <span class="system-info">Sistema de Análise Curricular</span>
             </div>
         </footer>
     </div>

@@ -17,7 +17,7 @@
         <!-- Cabeçalho único (removi a duplicação) -->
         <header class="app-header">
             <h1>
-                <img src="{% static 'analise_curricular/icone_IAUPE.ico' %}" alt="IAUPE" class="logo"> Análise Curricular
+                <img src="{% static 'Logo.ico' %}" alt="IAUPE" class="logo"> Análise Curricular
                 {% if selecao_nome %}
                     <span class="selection-name"> - {{ selecao_nome }}</span>
                 {% endif %}
@@ -131,7 +131,7 @@
         <footer class="app-footer">
             <div class="footer-info">
                 <span class="date-info">Hoje é {% now "j \d\e F \d\e Y" %}</span>
-                <span class="system-info">Sistema de Análise Curricular - IAUPE</span>
+                <span class="system-info">Sistema de Análise Curricular</span>
             </div>
         </footer>
     </div>
