@@ -67,9 +67,27 @@ body {
     font-size: 14px;
 }
 
-/* Formulário */
-.evaluation-form {
-    padding: 20px;
+/* Labels do formulário de login */
+.evaluation-form .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.evaluation-form label {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.evaluation-form input[type="text"],
+.evaluation-form input[type="email"],
+.evaluation-form input[type="password"] {
+    width: 65%;
+    padding: 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    font-size: 18px;
+    box-sizing: border-box;
 }
 
 /* Seções */
@@ -196,9 +214,19 @@ textarea:focus {
 
 /* Erros do Formulário */
 .form-error {
+    text-align: right;
     color: var(--danger-color);
     font-size: 14px;
     margin-top: 5px;
+}
+
+.form-error ul {
+    margin-left: 40px; /* Aumente o valor para mais deslocamento */
+    text-align: left;  /* Garante alinhamento à esquerda do texto */
+}
+
+.evaluation-form ul {
+    margin-left: 20px;
 }
 
 /* Navegação */

@@ -11,36 +11,47 @@
 <body>
     <div class="app-container">
         <header class="app-header">
-            <h1><img src="{% static 'logo.ico ' %}" alt="Logo" class="logo"> Cadastro de Avaliador</h1>
+            <h1><img src="{% static 'logo.ico ' %}" alt="" class="logo"> Cadastro de Avaliador</h1>
         </header>
 
         <section class="evaluation-section">
             <h2 class="section-title">Crie sua Conta</h2>
             <form method="post" class="evaluation-form">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="form-group">
-                        <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-                        {{ field }}
-                        {% if field.help_text %}
-                            <small class="form-help-text">{{ field.help_text }}</small>
-                        {% endif %}
-                        {% if field.errors %}
-                            <div class="form-error">
-                                {% for error in field.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-                {% if form.non_field_errors %}
+        {% for field in form %}
+            <div class="form-group">
+                {% if field.name == "username" %}
+                    <label for="{{ field.id_for_label }}">Nome de Usuário:</label>
+                    {{ field }}
+                    <small class="form-help-text">
+                        Escolha um nome de usuário único para acessar o sistema. <br>Este nome não poderá ser alterado posteriormente.
+                        <br><font color="red">Exemplos: pedro.silva, maria_2025, carlos01</font>
+                    </small>
+                {% elif field.name == "password1" %}
+                    <label for="{{ field.id_for_label }}">Senha:</label>
+                    {{ field }}
+                    <small class="form-help-text">
+                        Sua senha deve conter pelo menos 8 caracteres, letras e números.<br>
+                        <font color="red">Exemplo: Senha@2025</font>
+                    </small>
+                    {% if field.help_text %}
+                        <small class="form-help-text">{{ field.help_text }}</small>
+                    {% endif %}
+                {% else %}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-help-text">{{ field.help_text }}</small>
+                    {% endif %}
+                {% endif %}
+                {% if field.errors %}
                     <div class="form-error">
-                        {% for error in form.non_field_errors %}
+                        {% for error in field.errors %}
                             {{ error }}
                         {% endfor %}
                     </div>
                 {% endif %}
+            </div>
+        {% endfor %}
                 <button type="submit" class="nav-button next large-button">Cadastrar</button>
             </form>
             <p class="mt-20 text-center">Já tem uma conta? <a href="{% url 'login' %}" class="link-styled">Faça login aqui</a></p>

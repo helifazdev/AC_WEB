@@ -92,6 +92,7 @@ class Candidato(models.Model):
         verbose_name="Analisado"
     )
 
+   
     class Meta:
         verbose_name = "Candidato"
         verbose_name_plural = "Candidatos"
