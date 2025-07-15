@@ -583,3 +583,124 @@ textarea:focus {
     margin-left: 10px;
     font-weight: 400;
 }
+
+
+/* Layout Aprimorado */
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.welcome-message {
+    color: white;
+    font-weight: 400;
+}
+
+/* Seção de Avaliação */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: var(--border-radius);
+    margin-left: 10px;
+}
+
+.status-badge.success {
+    background-color: rgba(39, 174, 96, 0.1);
+    color: var(--success-color);
+}
+
+.candidate-counter {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+/* Lista de Candidatos */
+.candidates-container {
+    margin-top: 20px;
+}
+
+.candidate-item {
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.candidate-item:hover {
+    transform: translateX(2px);
+}
+
+.candidate-item.evaluated {
+    border-left: 3px solid var(--success-color);
+}
+
+.candidate-item.pending {
+    border-left: 3px solid var(--warning-color);
+}
+
+.candidate-name {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+.status-text {
+    font-size: 0.875rem;
+    margin-right: 10px;
+    color: var(--dark-gray);
+}
+
+.candidate-item.evaluated .status-text {
+    color: var(--success-color);
+}
+
+.candidate-item.pending .status-text {
+    color: var(--warning-color);
+}
+
+.arrow-icon {
+    transition: transform 0.2s;
+}
+
+.document-link:hover .arrow-icon {
+    transform: translateX(3px);
+}
+
+/* Estado Vazio */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    margin-top: 20px;
+}
+
+/* Ícones SVG */
+svg {
+    vertical-align: middle;
+}

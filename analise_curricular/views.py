@@ -47,30 +47,18 @@ def analisar_candidato(request, candidato_id=None):
         if not candidato:
             return render(request, 'Registration/sem_candidatos_na_selecao.html', {'selecao_nome': selecao_nome})
 
-    # Buscar documentos do candidato
-    documentos_candidato = []
-    documentos_dir = os.path.join(settings.MEDIA_ROOT, 'candidatos_documentos')
-    
-    if os.path.exists(documentos_dir):
-        for filename in os.listdir(documentos_dir):
-            # Verifica se o nome segue o padrão e corresponde à inscrição do candidato
-            partes = filename.split('_')
-            if len(partes) >= 3 and partes[1] == str(candidato.inscricao):
-                document_url = settings.MEDIA_URL + 'candidatos_documentos/' + filename
-                documentos_candidato.append({
-                    'tipo': partes[0],
-                    'nome': filename,
-                    'url': document_url,
-                })
+    # Busca documentos do candidato usando o relacionamento do Django (mais robusto)
+    documentos_candidato = candidato.documentos.all()
+
     if request.method == 'POST':
         form = CandidatoForm(request.POST, instance=candidato)
         if form.is_valid():
             form.save()
             
-            # Redirecionar para próximo candidato ou finalizar
+            # Redirecionar para próximo candidato ou finalizar (usando o nome de URL unificado)
             next_candidato = candidatos_da_selecao.filter(id__gt=candidato.id).order_by('id').first()
             if next_candidato:
-                return redirect('analisar_candidato_com_id', candidato_id=next_candidato.id)
+                return redirect('analisar_candidato', candidato_id=next_candidato.id)
             return redirect('finalizar_analise')
     else:
         form = CandidatoForm(instance=candidato)
@@ -115,7 +103,7 @@ def user_login(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect(settings.LOGIN_REDIRECT_URL)
+                return redirect('painel_avaliador')
             else:
                 form.add_error(None, "Usuário ou senha inválidos.")
     else:
@@ -134,7 +122,7 @@ def selecionar_selecao(request):
             selecao_escolhida = form.cleaned_data['selecao_disponivel']
             request.session['selecao_id'] = selecao_escolhida.id
             request.session['selecao_nome'] = selecao_escolhida.nome
-            return redirect('analisar_candidato')
+            return redirect('painel_avaliador')
     else:
         form = SelecaoForm()
     
@@ -189,3 +177,33 @@ def avaliador_signup(request):
     else:
         form = AvaliadorSignUpForm()
     return render(request, 'Registration/signup.html', {'form': form})
+
+@login_required
+def painel_avaliador(request):
+    usuario = request.user
+    selecao_id = request.session.get('selecao_id')
+
+    # Verifica se uma seleção foi escolhida. Se não, redireciona.
+    if not selecao_id:
+        messages.info(request, "Por favor, selecione um processo seletivo para continuar.")
+        return redirect('selecionar_selecao')
+
+    # Busca a seleção de forma segura, tratando o caso de não existir.
+    try:
+        selecao = Selecao.objects.get(id=selecao_id)
+    except Selecao.DoesNotExist:
+        # O ID na sessão é inválido. Limpa a sessão e redireciona.
+        del request.session['selecao_id']
+        if 'selecao_nome' in request.session:
+            del request.session['selecao_nome']
+        messages.error(request, "A seleção escolhida não foi encontrada. Por favor, selecione novamente.")
+        return redirect('selecionar_selecao')
+
+    candidatos = Candidato.objects.filter(selecao=selecao).order_by('id')
+    todos_avaliados = all(c.analisado for c in candidatos) if candidatos.exists() else False
+    return render(request, 'Registration/painel_avaliador.html', {
+        'usuario': usuario,
+        'selecao': selecao,
+        'candidatos': candidatos,
+        'todos_avaliados': todos_avaliados,
+    })

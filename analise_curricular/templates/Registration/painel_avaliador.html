@@ -1,0 +1,99 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Avaliador | {{ selecao.nome }}</title>
+    <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Cabeçalho Atualizado -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>
+                    <img src="{% static 'img/logo.png' %}" alt="Logo" class="logo">
+                    <span class="selection-name">Painel do Avaliador</span>
+                </h1>
+                <div class="user-info">
+                    <span class="welcome-message">Olá, <strong>{{ usuario.username }}</strong></span>
+                    <a href="{% url 'logout' %}" class="nav-button prev">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Sair
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <section class="evaluation-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        Processo Seletivo: {{ selecao.nome }}
+                        {% if todos_avaliados %}
+                            <span class="status-badge success">
+                                <svg width="16" height="16" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                </svg>
+                                Todos avaliados
+                            </span>
+                        {% endif %}
+                    </h2>
+                    <div class="candidate-counter">
+                        {{ candidatos|length }} candidato{{ candidatos|length|pluralize }}
+                    </div>
+                </div>
+
+                <!-- Lista de Candidatos -->
+                <div class="candidates-container">
+                    {% if candidatos %}
+                        <ul class="document-list">
+                            {% for candidato in candidatos %}
+                                <li class="candidate-item {% if candidato.analisado %}evaluated{% else %}pending{% endif %}">
+                                    <a href="{% url 'analisar_candidato' candidato.id %}" class="document-link">
+                                        <span class="document-icon">
+                                            {% if candidato.analisado %}
+                                                <svg width="20" height="20" viewBox="0 0 24 24">
+                                                    <path fill="var(--success-color)" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                                                </svg>
+                                            {% else %}
+                                                <svg width="20" height="20" viewBox="0 0 24 24">
+                                                    <path fill="var(--warning-color)" d="M13 13h-2V7h2m0 10h-2v-2h2m-1-13a10 10 0 0 0-10 10 10 10 0 0 0 10 10 10 10 0 0 0 10-10 10 10 0 0 0-10-10z"/>
+                                                </svg>
+                                            {% endif %}
+                                        </span>
+                                        <span class="candidate-name">{{ candidato.nome }}</span>
+                                        <span class="status-text">
+                                            {% if candidato.analisado %}
+                                                Avaliado
+                                            {% else %}
+                                                Pendente
+                                            {% endif %}
+                                        </span>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" class="arrow-icon">
+                                            <path fill="var(--dark-gray)" d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                                        </svg>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24">
+                                <path fill="var(--medium-gray)" d="M12 4a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 10c4.42 0 8 1.79 8 4v2H4v-2c0-2.21 3.58-4 8-4z"/>
+                            </svg>
+                            <p class="no-documents-message">Nenhum candidato cadastrado para esta seleção</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

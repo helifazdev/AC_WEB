@@ -1,5 +1,7 @@
 from django.db import models
 from datetime import date
+from django.utils import timezone
+from django.conf import settings
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -117,9 +119,6 @@ class Candidato(models.Model):
         """Mantida sua lógica original de save"""
         self.calcular_pontuacao()
         super().save(*args, **kwargs)
-
-# models.py
-from django.db import models
 
 class DocumentoCandidato(models.Model):
     TIPO_CHOICES = [
