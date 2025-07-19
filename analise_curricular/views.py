@@ -12,8 +12,6 @@ from datetime import datetime
 from django.utils import timezone
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
-
-
 from .forms import CandidatoForm, AvaliadorSignUpForm, SelecaoForm, DocumentoForm
 from .models import Candidato, Selecao, DocumentoCandidato
 
@@ -56,17 +54,21 @@ def analisar_candidato(request, candidato_id):
         })
 
     # 4. Processar documentos do candidato
-    documentos_candidato = candidato.documentos.all().order_by('-data_upload')
-
-    documentos_pasta = []  # Ou remova completamente se não for usar
-
-    context = {
-        'candidato': candidato,
-        'documentos': candidato.documentos.all(),
-        'documentos_candidato': documentos_candidato,  
-        # ... outros contextos ...
-    }
-
+    # Buscar documentos do candidato
+    documentos_candidato = []
+    documentos_dir = os.path.join(settings.MEDIA_ROOT, 'candidatos_documentos')
+    
+    if os.path.exists(documentos_dir):
+            for filename in os.listdir(documentos_dir):
+                # Verifica se o nome segue o padrão e corresponde à inscrição do candidato
+                partes = filename.split('_')
+                if len(partes) >= 3 and partes[1] == str(candidato.inscricao):
+                    document_url = settings.MEDIA_URL + 'candidatos_documentos/' + filename
+                    documentos_candidato.append({
+                        'tipo': partes[0],
+                        'nome': filename,
+                        'url': document_url,
+                    })
 
     # 5. Processar POST request
     if request.method == 'POST':
@@ -110,7 +112,7 @@ def analisar_candidato(request, candidato_id):
         'anterior_candidato_id': anterior_candidato.id if anterior_candidato else None,
         'data_formatada': _("Hoje é %(date)s") % {'date': timezone.now().strftime('%d de %B de %Y')},
         'documentos_candidato': documentos_candidato,
-        'documentos_pasta': documentos_pasta,
+        'documentos_dir': settings.MEDIA_URL + 'candidatos_documentos/',
     }
 
     return render(request, 'Registration/formulario.html', context)
@@ -157,7 +159,6 @@ def selecionar_selecao(request):
     
     return render(request, 'Registration/selecionar_selecao.html', {'form': form})
 
-@login_required
 def upload_documento(request, candidato_id):
     candidato = get_object_or_404(Candidato, pk=candidato_id)
     
@@ -228,7 +229,6 @@ def painel_avaliador(request, selecao_id):
     }
     return render(request, 'Registration/painel_avaliador.html', context)
 
-@login_required
 def listar_documentos(request, candidato_id):
     candidato = get_object_or_404(Candidato, pk=candidato_id)
     
