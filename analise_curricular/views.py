@@ -75,7 +75,11 @@ def analisar_candidato(request, candidato_id):
         form = CandidatoForm(request.POST, instance=candidato)
         if form.is_valid():
             form.save()
+            candidato = form.save(commit=False)
             candidato.analisado = True
+            candidato.analisado = True
+            candidato.data_analisado = timezone.now()  # Adiciona a data atual
+            candidato.avaliador_analise = request.user  # Adiciona o usuário logado
             candidato.save()
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -113,6 +117,8 @@ def analisar_candidato(request, candidato_id):
         'data_formatada': _("Hoje é %(date)s") % {'date': timezone.now().strftime('%d de %B de %Y')},
         'documentos_candidato': documentos_candidato,
         'documentos_dir': settings.MEDIA_URL + 'candidatos_documentos/',
+        'data_avaliacao': candidato.data_analisado,  # Adiciona ao contexto
+        'avaliador': candidato.avaliador_analise     # Adiciona ao contexto
     }
 
     return render(request, 'Registration/formulario.html', context)
@@ -229,6 +235,7 @@ def painel_avaliador(request, selecao_id):
     }
     return render(request, 'Registration/painel_avaliador.html', context)
 
+@login_required
 def listar_documentos(request, candidato_id):
     candidato = get_object_or_404(Candidato, pk=candidato_id)
     

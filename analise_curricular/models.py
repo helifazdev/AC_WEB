@@ -84,10 +84,22 @@ class Candidato(models.Model):
         verbose_name="Pontuação"
     )
     
-    # Campos de controle (mantidos como você definiu)
-    data_analise = models.DateField(
+    data_importacao = models.DateField(
         auto_now_add=True,
-        verbose_name="Data da Análise"
+        verbose_name="Data da Importação"
+    )
+
+    data_analisado = models.DateTimeField(
+        null=True, 
+        blank=True
+    )
+
+    avaliador_analise = models.ForeignKey(
+        User, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL,
+        related_name='avaliacoes_feitas'
     )
     
     analisado = models.BooleanField(
@@ -95,6 +107,12 @@ class Candidato(models.Model):
         verbose_name="Analisado"
     )
 
+    def save(self, *args, **kwargs):
+        if self.analisado and not self.data_analisado:
+            self.data_analisado = timezone.now()
+            if not self.avaliador_analise:
+                self.avaliador_analise = kwargs.pop('avaliador', None)
+        super().save(*args, **kwargs)
    
     class Meta:
         verbose_name = "Candidato"

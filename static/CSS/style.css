@@ -348,30 +348,6 @@ textarea:focus {
     background-color: #2980b9;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .app-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .form-navigation {
-        flex-direction: column-reverse;
-        gap: 10px;
-    }
-    
-    .nav-button {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .footer-info {
-        flex-direction: column;
-        gap: 5px;
-        text-align: center;
-    }
-}
 /* Estilos para os radio buttons */
 .radio-group {
     display: flex;
@@ -456,32 +432,37 @@ textarea:focus {
     border-color: #bdc3c7;
     background-color: #ecf0f1;
 }
-/* Dentro de style.css */
 
 /* Agrupamento de Informações do Candidato */
 .candidate-info-group {
     display: flex;
-    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas menores */
-    gap: 20px; /* Espaço entre os campos */
+    flex-wrap: wrap;
+    gap: 20px;
     margin-bottom: 20px;
-    /* Você pode adicionar um background ou borda se quiser um destaque visual */
-    /* background-color: var(--light-gray); */
-    /* padding: 15px; */
-    /* border-radius: var(--border-radius); */
+    border-radius: var(--border-radius);
 }
 
 .candidate-info-group .form-group {
-    flex: 1 1 calc(33% - 20px); /* Ajusta para 3 colunas, com um pequeno espaço */
-    min-width: 250px; /* Garante que os campos não fiquem muito pequenos */
-    margin-bottom: 0; /* Remove a margem inferior padrão do form-group para este contexto */
+    /* Configuração padrão para campos menores */
+    flex: 1 1 calc(33% - 40px); /* Ajuste para compensar o gap de 40px */
+    min-width: 250px;
+    margin-bottom: 0;
 }
 
+/* Específico para o campo do nome */
+.candidate-info-group .form-group:first-child {
+    flex: 2 1 calc(50% - 40px); /* Ocupa mais espaço */
+    min-width: 350px; /* Largura mínima maior para nomes longos */
+}
+
+/* Ajuste para telas menores */
 @media (max-width: 768px) {
-    .candidate-info-group .form-group {
-        flex: 1 1 100%; /* Uma coluna em telas menores */
+    .candidate-info-group .form-group,
+    .candidate-info-group .form-group:first-child {
+        flex: 1 1 100%; /* Todos os campos em linha única em mobile */
+        min-width: 100%;
     }
 }
-/* No seu style.css */
 
 /* Alinhamento de texto (se não existir) */
 .text-center {
@@ -704,6 +685,7 @@ textarea:focus {
 svg {
     vertical-align: middle;
 }
+
 .candidate-info {
     display: flex;
     flex-direction: column;
@@ -726,17 +708,6 @@ svg {
 .candidate-inscription::before {
     content: "#";
     margin-right: 0.25rem;
-}
-
-@media (max-width: 768px) {
-    .candidate-details {
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-}
-/* Filtros Compactos */
-.filter-form.compact {
-    margin-bottom: 1.5rem;
 }
 
 .filter-grid {
@@ -814,6 +785,35 @@ svg {
     .filter-button {
         padding: 0.5rem;
     }
+
+   .filter-form.compact {
+    margin-bottom: 1.5rem;
+    }
+    .candidate-details {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    }
+    
+    .form-navigation {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+    
+    .nav-button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .footer-info {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
+    }
 }
 .user-info {
     display: flex;
@@ -830,4 +830,64 @@ svg {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+/* Adicione isso ao seu style.css */
+
+/* Container do usuário - Padrão para todas as páginas */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+/* Mensagem de boas-vindas */
+.welcome-message {
+    font-size: 0.95rem;
+    color: white;
+    font-weight: 400;
+}
+
+/* Botão de Sair - Estilo consistente */
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.logout-button:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.logout-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Botão "Voltar" quando existir */
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }

@@ -111,11 +111,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Defina o idioma padrão
 LANGUAGE_CODE = 'pt-br'
 # Defina o fuso horário (para o Brasil use America/Sao_Paulo)
-TIME_ZONE = 'America/Sao_Paulo'
+TIME_ZONE = 'America/Sao_Paulo'  # Fuso horário brasileiro
 # Ative a internacionalização
 USE_I18N = True
-USE_TZ = True
-USE_TZ = True
+USE_TZ = True  # Importante para usar timezone
 #-------------------------------------------------------------------
 #6) Defina STATIC_URL
 STATIC_URL = '/static/'

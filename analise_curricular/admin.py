@@ -5,6 +5,8 @@ from import_export.admin import ImportExportModelAdmin
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
 from .models import Candidato, Selecao # <--- Certifique-se que Candidato e Selecao estão importados
+from django.utils import timezone
+from django.utils.formats import localize
 
 # 1. Classe Resource para o modelo Candidato
 # Esta classe define como os dados do Candidato serão importados/exportados.
@@ -24,13 +26,15 @@ class CandidatoResource(resources.ModelResource):
         fields = (
             'id', 'nome', 'inscricao', 'cargo',
             'requisito', 'avaliacao', 'justificativa', 'observacao',
-            'pontuacao', 'analisado', 'data_analise', 'selecao',
+            'pontuacao', 'analisado', 'data_importacao', 'selecao',
+            'data_analisado', 'avaliador_analise',
         )
         # Ordem das colunas na exportação.
         export_order = (
             'id', 'nome', 'inscricao', 'cargo',
             'requisito', 'avaliacao', 'justificativa', 'observacao',
-            'pontuacao', 'analisado', 'data_analise', 'selecao',
+            'pontuacao', 'analisado', 'data_importacao', 'selecao',
+            'data_analisado', 'avaliador_analise',
         )
         # Configurações de importação:
         # 'inscricao' é usado para identificar registros existentes.
@@ -56,8 +60,12 @@ class CandidatoAdmin(ImportExportModelAdmin):
         'avaliacao',
         'pontuacao',
         'analisado',
-        'data_analise',
-        'selecao' # Adicionado 'selecao' para visualização
+        'get_data_importacao',
+        'get_data_analisado',
+        'get_avaliador',
+        'nome',
+        'get_data_formatada',
+        'selecao'
     )
     # Campos para filtrar a lista de Candidatos no Admin
     list_filter = (
@@ -79,7 +87,32 @@ class CandidatoAdmin(ImportExportModelAdmin):
         'cargo'
     )
     # Campos que não podem ser editados manualmente no formulário do Admin
-    readonly_fields = ('pontuacao', 'data_analise')
+    readonly_fields = (
+        'pontuacao', 
+        'get_data_importacao',
+        'get_data_analisado',
+        'data_importacao',
+        'get_avaliador'
+    )
+
+    def get_data_formatada(self, obj):
+        if obj.data_importacao:
+            return localize(timezone.localtime(obj.data_importacao))
+        return "-"
+    get_data_formatada.short_description = 'Data/Hora Importação'
+    get_data_formatada.admin_order_field = 'data_importacao'
+
+    def get_data_importacao(self, obj):
+        return obj.data_importacao.strftime("%d/%m/%Y %H:%M") if obj.data_importacao else "-"
+    get_data_importacao.short_description = 'Data de Importação'
+    
+    def get_data_analisado(self, obj):
+        return obj.data_analisado.strftime("%d/%m/%Y %H:%M") if obj.data_analisado else "-"
+    get_data_analisado.short_description = 'Data da Análise'
+    
+    def get_avaliador(self, obj):
+        return obj.avaliador_analise.username if obj.avaliador_analise else "-"
+    get_avaliador.short_description = 'Avaliador'
 
     # Organização dos campos no formulário de edição do Candidato no Admin
     fieldsets = (
@@ -90,7 +123,7 @@ class CandidatoAdmin(ImportExportModelAdmin):
             'fields': ('requisito', 'avaliacao', 'justificativa', 'observacao'),
         }),
         ('Resultados', {
-            'fields': ('pontuacao', 'analisado', 'data_analise'),
+            'fields': ('pontuacao', 'analisado', 'data_importacao', 'data_analisado', 'avaliador_analise'),
         }),
     )
 
