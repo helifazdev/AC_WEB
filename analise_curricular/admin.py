@@ -7,6 +7,7 @@ from import_export.widgets import ForeignKeyWidget
 from .models import Candidato, Selecao # <--- Certifique-se que Candidato e Selecao estão importados
 from django.utils import timezone
 from django.utils.formats import localize
+from django.utils.formats import date_format
 
 # 1. Classe Resource para o modelo Candidato
 # Esta classe define como os dados do Candidato serão importados/exportados.
@@ -97,7 +98,7 @@ class CandidatoAdmin(ImportExportModelAdmin):
 
     def get_data_formatada(self, obj):
         if obj.data_importacao:
-            return localize(timezone.localtime(obj.data_importacao))
+             return date_format(obj.data_importacao, "SHORT_DATE_FORMAT")
         return "-"
     get_data_formatada.short_description = 'Data/Hora Importação'
     get_data_formatada.admin_order_field = 'data_importacao'

@@ -314,7 +314,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest' // Para identificar requisições AJAX no Django
             }
         })
-        .then(response => response.json())
+
+     /*    .then(response => response.json())
         .then(data => {
             if (data.success) {
                 // Atualizar visualmente o status do candidato no painel, se necessário
@@ -325,7 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('Erro ao salvar', data.errors || 'Ocorreu um erro ao salvar os dados.');
                 console.error('Erro ao salvar dados:', data);
             }
-        })
+        }) */
+
         .catch(error => {
             showAlert('Erro de conexão', 'Não foi possível conectar ao servidor.');
             console.error('Erro de conexão:', error);

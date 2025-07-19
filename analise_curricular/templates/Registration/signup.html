@@ -52,7 +52,10 @@
                 {% endif %}
             </div>
         {% endfor %}
-                <button type="submit" class="nav-button next large-button">Cadastrar</button>
+                <form method="post">
+            {% csrf_token %}
+            <button type="submit">Cadastrar</button>
+        </form>
             </form>
             <p class="mt-20 text-center">Já tem uma conta? <a href="{% url 'login' %}" class="link-styled">Faça login aqui</a></p>
         </section>
