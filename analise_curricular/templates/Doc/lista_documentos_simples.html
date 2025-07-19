@@ -1,0 +1,11 @@
+<!-- listar_documentos.html -->
+{% for documento in documentos_candidato %}
+<div class="documento">
+    <a href="{{ documento.arquivo.url }}" target="_blank">
+        {{ documento.get_tipo_display }} - {{ documento.data_upload|date:"d/m/Y" }}
+    </a>
+    <span>({{ documento.arquivo.size|filesizeformat }})</span>
+</div>
+{% empty %}
+<div class="alert alert-warning">Nenhum documento encontrado para este candidato.</div>
+{% endfor %}

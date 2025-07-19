@@ -1,9 +1,16 @@
-<!-- listar_documentos.html -->
-{% for documento in candidato.documento_set.all %}
-<div class="documento">
-    <a href="{{ documento.arquivo.url }}" target="_blank">
-        {{ documento.tipo }} - {{ documento.data_upload|date:"d/m/Y" }}
-    </a>
-    <span>({{ documento.arquivo.size|filesizeformat }})</span>
-</div>
+
+{% block content %}
+<h2>Documentos de {{ candidato.nome }}</h2>
+
+<ul>
+{% for doc in documentos %}
+    <li>
+        <a href="{{ doc.url }}" target="_blank">{{ doc.nome }}</a>
+    </li>
+{% empty %}
+    <li>Nenhum documento encontrado</li>
 {% endfor %}
+</ul>
+
+<a href="{% url 'analisar_candidato' candidato.id %}">Voltar</a>
+{% endblock %}

@@ -704,3 +704,130 @@ textarea:focus {
 svg {
     vertical-align: middle;
 }
+.candidate-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.candidate-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--medium-gray);
+    margin-top: 0.25rem;
+}
+
+.candidate-position, .candidate-inscription {
+    display: flex;
+    align-items: center;
+}
+
+.candidate-inscription::before {
+    content: "#";
+    margin-right: 0.25rem;
+}
+
+@media (max-width: 768px) {
+    .candidate-details {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+/* Filtros Compactos */
+.filter-form.compact {
+    margin-bottom: 1.5rem;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--light-gray);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-button {
+    padding: 0.5rem 0.75rem;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.filter-button.neutral {
+    background-color: var(--medium-gray);
+}
+
+.filter-button:hover {
+    opacity: 0.9;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        justify-content: flex-end;
+    }
+    
+    .mobile-hidden {
+        display: none;
+    }
+    
+    .filter-button {
+        padding: 0.5rem;
+    }
+}
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.welcome-message {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.nav-button.prev {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}

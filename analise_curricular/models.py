@@ -3,6 +3,7 @@ from datetime import date
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
+import os
 
 User = get_user_model()
 
@@ -146,3 +147,5 @@ class DocumentoCandidato(models.Model):
         """Deleta o arquivo físico quando o modelo é apagado"""
         self.arquivo.delete()
         super().delete(*args, **kwargs)
+
+

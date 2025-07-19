@@ -1,5 +1,5 @@
 # analise_curricular/forms.py
-
+import os
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import Candidato, Selecao, DocumentoCandidato
@@ -121,23 +121,43 @@ class SelecaoForm(forms.Form):
         required=True
     )
 class DocumentoForm(forms.ModelForm):
+    arquivo = forms.FileField(
+        label="Selecione o arquivo",
+        widget=forms.ClearableFileInput(attrs={
+            'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx',
+            'class': 'form-control-file'
+        }),
+        help_text="Formatos aceitos: PDF, JPG, PNG, DOC (Máx. 5MB)"
+    )
+
     class Meta:
         model = DocumentoCandidato
         fields = ['tipo', 'arquivo', 'observacoes']
         widgets = {
-            'observacoes': forms.Textarea(attrs={'rows': 3}),
+            'tipo': forms.Select(attrs={'class': 'form-control'}),
+            'observacoes': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'form-control',
+                'placeholder': 'Observações adicionais sobre o documento'
+            }),
         }
     
     def clean_arquivo(self):
         arquivo = self.cleaned_data.get('arquivo')
-        if arquivo:
-            # Limita o tamanho (5MB)
-            if arquivo.size > 5*1024*1024:
-                raise forms.ValidationError("Arquivo muito grande (tamanho máximo: 5MB)")
+        if not arquivo:
+            raise forms.ValidationError("Por favor, selecione um arquivo")
             
-            # Valida extensões permitidas
-            extensoes_validas = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']
-            if not any(arquivo.name.lower().endswith(ext) for ext in extensoes_validas):
-                raise forms.ValidationError("Tipo de arquivo não suportado. Use PDF, JPG, PNG ou DOC.")
+        # Validação de tamanho (5MB)
+        if arquivo.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("O arquivo excede o tamanho máximo de 5MB")
         
-        return arquivo
+        # Validação de extensão
+        extensoes_validas = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']
+        extensao = os.path.splitext(arquivo.name)[1].lower()
+        
+        if extensao not in extensoes_validas:
+            raise forms.ValidationError(
+                "Tipo de arquivo não suportado. Use: " + 
+                ", ".join(ext[1:] for ext in extensoes_validas)
+            )
+        

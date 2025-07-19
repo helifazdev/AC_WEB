@@ -10,6 +10,7 @@ from django.db.models import Max
 from django.contrib import messages
 from datetime import datetime
 from django.utils import timezone
+from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
 
 
@@ -23,68 +24,95 @@ def tela_entrada(request):
     return render(request, 'tela_entrada.html')
 
 @login_required
-def analisar_candidato(request, candidato_id=None):
+def analisar_candidato(request, candidato_id):
+    logger.debug(f"Session data: {dict(request.session)}")
+    logger.debug(f"Candidato ID: {candidato_id}")
+    
     selecao_id = request.session.get('selecao_id')
-    selecao_nome = request.session.get('selecao_nome', 'Nenhuma Seleção Selecionada')
-
+    logger.debug(f"Selecao ID from session: {selecao_id}")
+    
     if not selecao_id:
+        logger.error("Nenhum selecao_id encontrado na sessão")
         return redirect('selecionar_selecao')
     
+    # 1. Verificação inicial da sessão
+    selecao_id = request.session.get('selecao_id')
+    if not selecao_id:
+        return redirect('selecionar_selecao')
+
+    # 2. Obter candidato e verificar se pertence à seleção
+    try:
+        candidato = Candidato.objects.get(pk=candidato_id, selecao__id=selecao_id)
+    except Candidato.DoesNotExist:
+        return redirect('selecionar_selecao')
+
+    # 3. Obter lista de candidatos da seleção
     candidatos_da_selecao = Candidato.objects.filter(selecao__id=selecao_id).order_by('id')
     total_candidatos = candidatos_da_selecao.count()
 
     if total_candidatos == 0:
-        return render(request, 'Registration/sem_candidatos_na_selecao.html', {'selecao_nome': selecao_nome})
+        return render(request, 'Registration/sem_candidatos_na_selecao.html', {
+            'selecao_nome': request.session.get('selecao_nome', 'Nenhuma Seleção Selecionada')
+        })
 
-    # Obter candidato atual
-    if candidato_id:
-        try:
-            candidato = candidatos_da_selecao.get(id=candidato_id)
-        except Candidato.DoesNotExist:
-            return redirect('analisar_candidato')
-    else:
-        candidato = candidatos_da_selecao.first()
-        if not candidato:
-            return render(request, 'Registration/sem_candidatos_na_selecao.html', {'selecao_nome': selecao_nome})
+    # 4. Processar documentos do candidato
+    documentos_candidato = candidato.documentos.all().order_by('-data_upload')
 
-    # Busca documentos do candidato usando o relacionamento do Django (mais robusto)
-    documentos_candidato = candidato.documentos.all()
+    documentos_pasta = []  # Ou remova completamente se não for usar
 
+    context = {
+        'candidato': candidato,
+        'documentos': candidato.documentos.all(),
+        'documentos_candidato': documentos_candidato,  
+        # ... outros contextos ...
+    }
+
+
+    # 5. Processar POST request
     if request.method == 'POST':
         form = CandidatoForm(request.POST, instance=candidato)
         if form.is_valid():
             form.save()
+            candidato.analisado = True
+            candidato.save()
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
             
-            # Redirecionar para próximo candidato ou finalizar (usando o nome de URL unificado)
             next_candidato = candidatos_da_selecao.filter(id__gt=candidato.id).order_by('id').first()
             if next_candidato:
                 return redirect('analisar_candidato', candidato_id=next_candidato.id)
-            return redirect('finalizar_analise')
+
+            return redirect('finalizar_analise')  # Redirecionamento fora do bloco if
+        elif request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'errors': form.errors})
+        # Se não for AJAX e o form for inválido, continua para mostrar os erros
     else:
         form = CandidatoForm(instance=candidato)
 
-    # Calcular índice e candidato anterior
+    # 6. Calcular navegação entre candidatos
     ids_ordenados = list(candidatos_da_selecao.values_list('id', flat=True))
     try:
         indice_atual = ids_ordenados.index(candidato.id) + 1
     except ValueError:
-        indice_atual = 0
+        indice_atual = 1
 
-    anterior_candidato_id = None
-    if indice_atual > 1:
-        anterior_candidato = candidatos_da_selecao.filter(id__lt=candidato.id).order_by('-id').first()
-        if anterior_candidato:
-            anterior_candidato_id = anterior_candidato.id
+    anterior_candidato = candidatos_da_selecao.filter(id__lt=candidato.id).order_by('-id').first()
 
+    # 7. Preparar contexto final
     context = {
         'form': form,
+        'candidato': candidato,
+        'selecao_id': selecao_id,
+        'selecao_nome': candidato.selecao.nome if candidato.selecao else request.session.get('selecao_nome', ''),
         'indice_atual': indice_atual,
         'total_candidatos': total_candidatos,
-        'anterior_candidato_id': anterior_candidato_id,
+        'anterior_candidato_id': anterior_candidato.id if anterior_candidato else None,
         'data_formatada': _("Hoje é %(date)s") % {'date': timezone.now().strftime('%d de %B de %Y')},
-        'selecao_nome': selecao_nome,
         'documentos_candidato': documentos_candidato,
+        'documentos_pasta': documentos_pasta,
     }
+
     return render(request, 'Registration/formulario.html', context)
 
 @login_required
@@ -103,7 +131,7 @@ def user_login(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('painel_avaliador')
+                return redirect('selecionar_selecao')  # Redirect to selection page
             else:
                 form.add_error(None, "Usuário ou senha inválidos.")
     else:
@@ -122,7 +150,8 @@ def selecionar_selecao(request):
             selecao_escolhida = form.cleaned_data['selecao_disponivel']
             request.session['selecao_id'] = selecao_escolhida.id
             request.session['selecao_nome'] = selecao_escolhida.nome
-            return redirect('painel_avaliador')
+            # CRUCIAL CHANGE: Pass selecao_id as an argument to the URL
+            return redirect('painel_avaliador', selecao_id=selecao_escolhida.id)
     else:
         form = SelecaoForm()
     
@@ -138,22 +167,15 @@ def upload_documento(request, candidato_id):
             documento = form.save(commit=False)
             documento.candidato = candidato
             documento.save()
-            
-            # Adiciona mensagem de sucesso
-            messages.success(request, f"Documento '{documento.get_tipo_display()}' enviado com sucesso!")
+            messages.success(request, "Documento enviado com sucesso!")
             return redirect('analisar_candidato', candidato_id=candidato.id)
     else:
         form = DocumentoForm()
     
-    # Busca documentos já enviados
-    documentos = candidato.documentos.all()
-    
-    context = {
-        'candidato': candidato,
+    return render(request, 'upload_documento.html', {
         'form': form,
-        'documentos': documentos,
-    }
-    return render(request, 'upload_documento.html', context)
+        'candidato': candidato
+    })
 
 @login_required
 def deletar_documento(request, documento_id):
@@ -179,31 +201,53 @@ def avaliador_signup(request):
     return render(request, 'Registration/signup.html', {'form': form})
 
 @login_required
-def painel_avaliador(request):
-    usuario = request.user
-    selecao_id = request.session.get('selecao_id')
+def painel_avaliador(request, selecao_id):
+    selecao = get_object_or_404(Selecao, pk=selecao_id)
+    candidatos = Candidato.objects.filter(selecao=selecao).order_by('inscricao')  # Note o campo 'inscricao'
 
-    # Verifica se uma seleção foi escolhida. Se não, redireciona.
-    if not selecao_id:
-        messages.info(request, "Por favor, selecione um processo seletivo para continuar.")
-        return redirect('selecionar_selecao')
+    # Filtros
+    nome_filtro = request.GET.get('nome_filtro')
+    inscricao_filtro = request.GET.get('inscricao')
+    cargo_filtro = request.GET.get('cargo')
 
-    # Busca a seleção de forma segura, tratando o caso de não existir.
-    try:
-        selecao = Selecao.objects.get(id=selecao_id)
-    except Selecao.DoesNotExist:
-        # O ID na sessão é inválido. Limpa a sessão e redireciona.
-        del request.session['selecao_id']
-        if 'selecao_nome' in request.session:
-            del request.session['selecao_nome']
-        messages.error(request, "A seleção escolhida não foi encontrada. Por favor, selecione novamente.")
-        return redirect('selecionar_selecao')
+    if nome_filtro:
+        candidatos = candidatos.filter(nome__icontains=nome_filtro)
+    
+    if inscricao_filtro:
+        # Busca exata para inscrição (case insensitive)
+        inscricao_limpa = ''.join(c for c in inscricao_filtro if c.isdigit())
+        candidatos = candidatos.filter(inscricao__endswith=inscricao_limpa)
+    
+    if cargo_filtro:
+        candidatos = candidatos.filter(cargo__icontains=cargo_filtro)
 
-    candidatos = Candidato.objects.filter(selecao=selecao).order_by('id')
-    todos_avaliados = all(c.analisado for c in candidatos) if candidatos.exists() else False
-    return render(request, 'Registration/painel_avaliador.html', {
-        'usuario': usuario,
+    context = {
         'selecao': selecao,
         'candidatos': candidatos,
-        'todos_avaliados': todos_avaliados,
+        'todos_avaliados': not candidatos.filter(analisado=False).exists()
+    }
+    return render(request, 'Registration/painel_avaliador.html', context)
+
+@login_required
+def listar_documentos(request, candidato_id):
+    candidato = get_object_or_404(Candidato, pk=candidato_id)
+    
+    documentos = []
+    pasta = os.path.join(settings.MEDIA_ROOT, 'candidatos_documentos')
+    
+    if os.path.exists(pasta):
+        for arquivo in os.listdir(pasta):
+            if f"_{candidato.inscricao.lstrip('#')}_" in arquivo:
+                documentos.append({
+                    'nome': arquivo,
+                    'url': os.path.join(settings.MEDIA_URL, 'candidatos_documentos', arquivo)
+                })
+    
+    return render(request, 'listar_documentos.html', {
+        'candidato': candidato,
+        'documentos': documentos
     })
+
+import logging
+logger = logging.getLogger(__name__)
+
