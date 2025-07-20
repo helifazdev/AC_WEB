@@ -4,7 +4,7 @@ from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
 from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
-from .models import Candidato, Selecao # <--- Certifique-se que Candidato e Selecao estão importados
+from .models import Candidato, Selecao, FormQuestion # <--- Certifique-se que Candidato e Selecao estão importados
 from django.utils import timezone
 from django.utils.formats import localize
 from django.utils.formats import date_format
@@ -20,36 +20,36 @@ class CandidatoResource(resources.ModelResource):
         widget=ForeignKeyWidget(Selecao, 'nome') # Mapeia para o campo 'nome' do modelo Selecao
     )
 
-    class Meta:
-        model = Candidato
-        # Campos que serão incluídos na importação e exportação.
-        # 'selecao' deve estar listado aqui, pois será lido/escrito do CSV.
-        fields = (
-            'id', 'nome', 'inscricao', 'cargo',
-            'requisito', 'avaliacao', 'justificativa', 'observacao',
-            'pontuacao', 'analisado', 'data_importacao', 'selecao',
-            'data_analisado', 'avaliador_analise',
-        )
-        # Ordem das colunas na exportação.
-        export_order = (
-            'id', 'nome', 'inscricao', 'cargo',
-            'requisito', 'avaliacao', 'justificativa', 'observacao',
-            'pontuacao', 'analisado', 'data_importacao', 'selecao',
-            'data_analisado', 'avaliador_analise',
-        )
-        # Configurações de importação:
-        # 'inscricao' é usado para identificar registros existentes.
-        # Se um candidato com a mesma 'inscricao' já existe, o registro será ATUALIZADO.
-        import_id_fields = ['inscricao'] # <--- Essencial para evitar 'UNIQUE constraint failed'
-        skip_unchanged = True # Pula linhas que não tiveram mudanças
-        report_skipped = True # Reporta as linhas que foram puladas (útil na prévia da importação)
+class Meta:
+    model = Candidato
+    # Campos que serão incluídos na importação e exportação.
+    # 'selecao' deve estar listado aqui, pois será lido/escrito do CSV.
+    fields = (
+        'id', 'nome', 'inscricao', 'cargo',
+        'requisito', 'avaliacao', 'justificativa', 'observacao',
+        'pontuacao', 'analisado', 'data_importacao', 'selecao',
+        'data_analisado', 'avaliador_analise',
+    )
+    # Ordem das colunas na exportação.
+    export_order = (
+        'id', 'nome', 'inscricao', 'cargo',
+        'requisito', 'avaliacao', 'justificativa', 'observacao',
+        'pontuacao', 'analisado', 'data_importacao', 'selecao',
+        'data_analisado', 'avaliador_analise',
+    )
+    # Configurações de importação:
+    # 'inscricao' é usado para identificar registros existentes.
+    # Se um candidato com a mesma 'inscricao' já existe, o registro será ATUALIZADO.
+    import_id_fields = ['inscricao'] # <--- Essencial para evitar 'UNIQUE constraint failed'
+    skip_unchanged = True # Pula linhas que não tiveram mudanças
+    report_skipped = True # Reporta as linhas que foram puladas (útil na prévia da importação)
 
     # O método 'before_import_row' NÃO é mais necessário aqui
     # porque a atribuição da seleção virá diretamente de uma coluna no CSV,
     # e o 'ForeignKeyWidget' junto com 'import_id_fields' faz o trabalho.
 
-# 2. Classe Admin para o modelo Candidato
-# Herda de ImportExportModelAdmin para habilitar os botões de Importar/Exportar.
+    # 2. Classe Admin para o modelo Candidato
+    # Herda de ImportExportModelAdmin para habilitar os botões de Importar/Exportar.
 @admin.register(Candidato) # Registra o modelo Candidato com esta classe Admin
 class CandidatoAdmin(ImportExportModelAdmin):
     # Campos a serem exibidos na lista de Candidatos no Admin
@@ -142,3 +142,18 @@ class SelecaoAdmin(admin.ModelAdmin):
     search_fields = ('nome', 'descricao')
 
 admin.site.register(Selecao, SelecaoAdmin) # <--- Registro explícito para Selecao
+
+class FormQuestionInline(admin.TabularInline):
+    model = FormQuestion
+    extra = 1
+    fields = ('question_text', 'question_type', 'order', 'required', 'options')
+
+@admin.register(FormQuestion)
+class FormQuestionAdmin(admin.ModelAdmin):
+    list_display = ('selecao', 'question_text', 'question_type', 'order')
+    list_filter = ('selecao', 'question_type')
+    ordering = ('selecao', 'order')
+
+class SelecaoAdmin(admin.ModelAdmin):
+    inlines = [FormQuestionInline]
+

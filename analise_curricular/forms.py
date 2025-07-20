@@ -2,7 +2,7 @@
 import os
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Candidato, Selecao, DocumentoCandidato
+from .models import Candidato, Selecao, DocumentoCandidato, FormQuestion
 
 class CandidatoForm(forms.ModelForm):
     REQUISITO_CHOICES = [
@@ -160,4 +160,41 @@ class DocumentoForm(forms.ModelForm):
                 "Tipo de arquivo não suportado. Use: " + 
                 ", ".join(ext[1:] for ext in extensoes_validas)
             )
+
+class DynamicCandidatoForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        selecao_id = kwargs.pop('selecao_id', None)
+        super().__init__(*args, **kwargs)
         
+        if selecao_id:
+            # Adiciona campos dinâmicos baseados nas perguntas da seleção
+            questions = FormQuestion.objects.filter(selecao_id=selecao_id).order_by('order')
+            
+            for question in questions:
+                field_name = f'question_{question.id}'
+                
+                if question.question_type == 'text':
+                    self.fields[field_name] = forms.CharField(
+                        label=question.question_text,
+                        required=question.required,
+                        widget=forms.TextInput(attrs={'class': 'form-control'})
+                    )
+                elif question.question_type == 'select':
+                    choices = [(opt['value'], opt['text']) for opt in question.options]
+                    self.fields[field_name] = forms.ChoiceField(
+                        label=question.question_text,
+                        choices=choices,
+                        required=question.required,
+                        widget=forms.Select(attrs={'class': 'form-control'})
+                    )
+                # Adicione outros tipos de perguntas conforme necessário
+
+    class Meta:
+        model = Candidato
+        fields = ['nome', 'inscricao', 'cargo', 'observacao']
+        widgets = {
+            'nome': forms.TextInput(attrs={'readonly': True}),
+            'inscricao': forms.TextInput(attrs={'readonly': True}),
+            'cargo': forms.TextInput(attrs={'readonly': True}),
+            'observacao': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
+        }

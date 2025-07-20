@@ -12,8 +12,8 @@ from datetime import datetime
 from django.utils import timezone
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
-from .forms import CandidatoForm, AvaliadorSignUpForm, SelecaoForm, DocumentoForm
-from .models import Candidato, Selecao, DocumentoCandidato
+from .forms import DynamicCandidatoForm, AvaliadorSignUpForm, SelecaoForm, DocumentoForm
+from .models import Candidato, Selecao, DocumentoCandidato, FormQuestion
 
 def inscricao_finalizada(request):
     return render(request, 'Registration/inscricao_finalizada.html')
@@ -72,14 +72,24 @@ def analisar_candidato(request, candidato_id):
 
     # 5. Processar POST request
     if request.method == 'POST':
-        form = CandidatoForm(request.POST, instance=candidato)
+        form = DynamicCandidatoForm(
+            request.POST, 
+            instance=candidato,
+            selecao_id=selecao_id)
         if form.is_valid():
             form.save()
             candidato = form.save(commit=False)
             candidato.analisado = True
-            candidato.analisado = True
             candidato.data_analisado = timezone.now()  # Adiciona a data atual
             candidato.avaliador_analise = request.user  # Adiciona o usuário logado
+
+            # Processar respostas dinâmicas
+            for key, value in form.cleaned_data.items():
+                if key.startswith('question_'):
+                    question_id = key.replace('question_', '')
+                    # Aqui você pode salvar as respostas em um modelo separado
+                    # ou em um JSONField no modelo Candidato
+
             candidato.save()
 
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -94,7 +104,10 @@ def analisar_candidato(request, candidato_id):
             return JsonResponse({'success': False, 'errors': form.errors})
         # Se não for AJAX e o form for inválido, continua para mostrar os erros
     else:
-        form = CandidatoForm(instance=candidato)
+         form = DynamicCandidatoForm(
+            instance=candidato,
+            selecao_id=selecao_id
+        )
 
     # 6. Calcular navegação entre candidatos
     ids_ordenados = list(candidatos_da_selecao.values_list('id', flat=True))
@@ -104,6 +117,8 @@ def analisar_candidato(request, candidato_id):
         indice_atual = 1
 
     anterior_candidato = candidatos_da_selecao.filter(id__lt=candidato.id).order_by('-id').first()
+
+    perguntas = FormQuestion.objects.filter(selecao=candidato.selecao).order_by('order')
 
     # 7. Preparar contexto final
     context = {
@@ -118,7 +133,8 @@ def analisar_candidato(request, candidato_id):
         'documentos_candidato': documentos_candidato,
         'documentos_dir': settings.MEDIA_URL + 'candidatos_documentos/',
         'data_avaliacao': candidato.data_analisado,  # Adiciona ao contexto
-        'avaliador': candidato.avaliador_analise     # Adiciona ao contexto
+        'avaliador': candidato.avaliador_analise,     # Adiciona ao contexto
+        'perguntas': perguntas
     }
 
     return render(request, 'Registration/formulario.html', context)

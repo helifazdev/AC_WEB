@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'import_export',
     'analise_curricular',
+    'dynamic_forms',
 ]
 #3) Defina os middlewares
 MIDDLEWARE = [

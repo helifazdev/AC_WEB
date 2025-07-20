@@ -86,58 +86,43 @@
                 {% endif %}
             </section>
 
-   <section class="evaluation-section">
-    <h2 class="section-title">Avaliação Curricular</h2>
-    
-    <!-- Campos fixos do seu form (requisito e titulo) -->
-    {% for field in form %}
-        {% if field.name in 'requisito,titulo' %}
+        <!-- Seções de Avaliação Dinâmicas -->
+       {% for field in form %}
+    {% if field.name not in 'nome,inscricao,cargo,observacao' %}
+    <section class="evaluation-section">
+        <h2 class="section-title">{{ field.label }}</h2>
         <div class="form-group">
-            <label>{{ field.label }}</label>
             {{ field }}
-        </div>
-        {% endif %}
-    {% endfor %}
-    
-    <!-- Perguntas dinâmicas do admin -->
-    {% for pergunta in perguntas %}
-    <div class="form-group" id="pergunta-{{ pergunta.id }}">
-        <label>{{ pergunta.question_text }}{% if pergunta.required %}*{% endif %}</label>
-        
-        {% if pergunta.question_type == 'radio' or pergunta.question_type == 'select' %}
-            <select name="pergunta_{{ pergunta.id }}" class="form-control" {% if pergunta.required %}required{% endif %}>
-                {% for opcao in pergunta.options %}
-                <option value="{{ opcao.value }}">{{ opcao.text }}</option>
-                {% endfor %}
-            </select>
-        
-        {% elif pergunta.question_type == 'checkbox' %}
-            {% for opcao in pergunta.options %}
-            <label class="checkbox-label">
-                <input type="checkbox" name="pergunta_{{ pergunta.id }}" value="{{ opcao.value }}">
-                {{ opcao.text }}
-            </label>
-            {% endfor %}
-            
-        {% else %} <!-- text, number, etc -->
-            <input type="{{ pergunta.question_type }}" name="pergunta_{{ pergunta.id }}" 
-                   class="form-control" {% if pergunta.required %}required{% endif %}>
-        {% endif %}
-    </div>
-    {% endfor %}
-    
-    <!-- Mantenha as seções condicionais existentes -->
-    <div id="motivo-nao-possui-section" style="display: none;">
-        {{ form.motivo_nao_possui }}
-    </div>
-    
-    <div id="justificativa-section" style="display: none;">
-        {{ form.justificativa }}
-    </div>
-</section>
+            {% if field.errors %}
+                <div class="form-error">{{ field.errors }}</div>
+            {% endif %}
+                </div>
+            </section>
+            {% endif %}
+        {% endfor %}
 
+        <!-- Seção de Motivo (condicional) -->
+        <section class="evaluation-section" id="motivo-nao-possui-section" style="display: none;">
+            <h2 class="section-title">{{ form.motivo_nao_possui.label }}</h2>
+            <div class="form-group">
+                {{ form.motivo_nao_possui }}
+                {% if form.motivo_nao_possui.errors %}
+                    <div class="form-error">{{ form.motivo_nao_possui.errors }}</div>
+                {% endif %}
+            </div>
+        </section>
 
-
+        <!-- Seção de Justificativa (condicional) -->
+        <section class="evaluation-section" id="justificativa-section" style="display: none;">
+            <h2 class="section-title">{{ form.justificativa.label }}</h2>
+            <div class="form-group">
+                {{ form.justificativa }}
+                {% if form.justificativa.errors %}
+                    <div class="form-error">{{ form.justificativa.errors }}</div>
+                {% endif %}
+            </div>
+ 
+        </section>
         <!-- Seção de Observações -->
         <section class="evaluation-section">
             <h2 class="section-title">{{ form.observacao.label }}</h2>
@@ -247,30 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-      function verificarCondicoes() {
-        {% for pergunta in perguntas %}
-            {% if pergunta.conditions %}
-                // Lógica para mostrar/ocultar com base nas condições
-                const pergunta{{ pergunta.id }} = document.getElementById('pergunta-{{ pergunta.id }}');
-                const dependenteDe = "{{ pergunta.conditions.depends_on }}";
-                const valorEsperado = "{{ pergunta.conditions.value }}";
-                
-                // Verifica se a pergunta dependente tem o valor esperado
-                const elementoDependente = document.querySelector(`[name="${dependenteDe}"]`);
-                if (elementoDependente) {
-                    const deveMostrar = elementoDependente.value === valorEsperado;
-                    pergunta{{ pergunta.id }}.style.display = deveMostrar ? 'block' : 'none';
-                    
-                    // Atualiza quando o campo dependente muda
-                    elementoDependente.addEventListener('change', function() {
-                        pergunta{{ pergunta.id }}.style.display = this.value === valorEsperado ? 'block' : 'none';
-                    });
-                }
-            {% endif %}
-        {% endfor %}
-    }}
-    
-
     // --- 3. EVENTOS ---
     // Adiciona evento para todos radios de requisito
     document.querySelectorAll('input[name="requisito"]').forEach(function(radio) {
@@ -341,7 +302,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             savingTimeout = setTimeout(saveFormData, 1000); // Salva após 1 segundo de inatividade
         });
-    
     });
 
     function saveFormData() {

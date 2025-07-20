@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ form_selection.name }}</h1>
+<p>{{ form_selection.description }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    
+    {% for question in questions %}
+    <div class="form-group">
+        <label for="question_{{ question.id }}">{{ question.question_text }}</label>
+        
+        {% if question.question_type == 'text' %}
+        <input type="text" class="form-control" id="question_{{ question.id }}" 
+               name="question_{{ question.id }}" {% if question.required %}required{% endif %}>
+        
+        {% elif question.question_type == 'number' %}
+        <input type="number" class="form-control" id="question_{{ question.id }}" 
+               name="question_{{ question.id }}" {% if question.required %}required{% endif %}>
+        
+        {% elif question.question_type == 'select' %}
+        <select class="form-control" id="question_{{ question.id }}" 
+                name="question_{{ question.id }}" {% if question.required %}required{% endif %}>
+            {% for option in question.options %}
+            <option value="{{ option.value }}">{{ option.text }}</option>
+            {% endfor %}
+        </select>
+        
+        {% elif question.question_type == 'checkbox' %}
+        {% for option in question.options %}
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" 
+                   id="question_{{ question.id }}_{{ forloop.counter }}" 
+                   name="question_{{ question.id }}" value="{{ option.value }}">
+            <label class="form-check-label" for="question_{{ question.id }}_{{ forloop.counter }}">
+                {{ option.text }}
+            </label>
+        </div>
+        {% endfor %}
+        
+        {% elif question.question_type == 'radio' %}
+        {% for option in question.options %}
+        <div class="form-check">
+            <input class="form-check-input" type="radio" 
+                   id="question_{{ question.id }}_{{ forloop.counter }}" 
+                   name="question_{{ question.id }}" value="{{ option.value }}"
+                   {% if question.required %}required{% endif %}>
+            <label class="form-check-label" for="question_{{ question.id }}_{{ forloop.counter }}">
+                {{ option.text }}
+            </label>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Enviar</button>
+</form>
+
+<script>
+// Aqui você pode adicionar JavaScript para lidar com lógicas condicionais
+document.addEventListener('DOMContentLoaded', function() {
+    // Exemplo: Esconder/mostrar perguntas baseado em respostas anteriores
+});
+</script>
+{% endblock %}

@@ -18,11 +18,14 @@ from django.contrib import admin
 from django.urls import path, include # Importe 'include'
 from django.conf import settings # Para arquivos estáticos em desenvolvimento
 from django.conf.urls.static import static # Para arquivos estáticos em desenvolvimento
+from dynamic_forms import views as dynamic_forms_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     
     path('', include('analise_curricular.urls')), # Inclui as URLs do seu aplicativo aqui
+    path('admin/', admin.site.urls),
+    path('forms/', include('dynamic_forms.urls')),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

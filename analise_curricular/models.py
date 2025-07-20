@@ -4,6 +4,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 import os
+from django.db import models
+from django.db.models import JSONField 
 
 User = get_user_model()
 
@@ -167,3 +169,29 @@ class DocumentoCandidato(models.Model):
         super().delete(*args, **kwargs)
 
 
+class FormQuestion(models.Model):
+    QUESTION_TYPES = (
+        ('text', 'Texto'),
+        ('number', 'Número'),
+        ('select', 'Seleção'),
+        ('checkbox', 'Checkbox'),
+        ('radio', 'Rádio'),
+    )
+    
+    selecao = models.ForeignKey(
+        Selecao, 
+        on_delete=models.CASCADE, 
+        related_name='questions'
+    )
+    question_text = models.CharField(max_length=255)
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    order = models.PositiveIntegerField(default=0)
+    required = models.BooleanField(default=True)
+    options = JSONField(blank=True, null=True)  # Para perguntas de seleção
+    conditions = JSONField(blank=True, null=True)  # Para lógicas condicionais
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.selecao.nome} - {self.question_text}"
