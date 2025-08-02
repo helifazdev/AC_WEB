@@ -1,159 +1,74 @@
-# analise_curricular/admin.py
+# analise_curricular/admin.py (Versão corrigida para usar o CandidatoAdminForm)
 
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from import_export import resources, fields
-from import_export.widgets import ForeignKeyWidget
-from .models import Candidato, Selecao, FormQuestion # <--- Certifique-se que Candidato e Selecao estão importados
-from django.utils import timezone
-from django.utils.formats import localize
-from django.utils.formats import date_format
+from .models import Selecao, Candidato, DocumentoCandidato, FormQuestion
+from .forms import DynamicCandidatoForm, CandidatoAdminForm # Importe o novo formulário para o Admin
 
-# 1. Classe Resource para o modelo Candidato
-# Esta classe define como os dados do Candidato serão importados/exportados.
-class CandidatoResource(resources.ModelResource):
-    # O campo 'selecao' é um ForeignKey e vamos mapeá-lo para uma coluna 'selecao' no CSV.
-    # O ForeignKeyWidget usará o 'nome' da Selecao para encontrar o objeto correto no banco de dados.
-    selecao = fields.Field(
-        column_name='selecao',  # Nome da coluna no seu arquivo CSV para a Seleção
-        attribute='selecao',    # Atributo correspondente no modelo Candidato
-        widget=ForeignKeyWidget(Selecao, 'nome') # Mapeia para o campo 'nome' do modelo Selecao
-    )
-
-class Meta:
-    model = Candidato
-    # Campos que serão incluídos na importação e exportação.
-    # 'selecao' deve estar listado aqui, pois será lido/escrito do CSV.
-    fields = (
-        'id', 'nome', 'inscricao', 'cargo',
-        'requisito', 'avaliacao', 'justificativa', 'observacao',
-        'pontuacao', 'analisado', 'data_importacao', 'selecao',
-        'data_analisado', 'avaliador_analise',
-    )
-    # Ordem das colunas na exportação.
-    export_order = (
-        'id', 'nome', 'inscricao', 'cargo',
-        'requisito', 'avaliacao', 'justificativa', 'observacao',
-        'pontuacao', 'analisado', 'data_importacao', 'selecao',
-        'data_analisado', 'avaliador_analise',
-    )
-    # Configurações de importação:
-    # 'inscricao' é usado para identificar registros existentes.
-    # Se um candidato com a mesma 'inscricao' já existe, o registro será ATUALIZADO.
-    import_id_fields = ['inscricao'] # <--- Essencial para evitar 'UNIQUE constraint failed'
-    skip_unchanged = True # Pula linhas que não tiveram mudanças
-    report_skipped = True # Reporta as linhas que foram puladas (útil na prévia da importação)
-
-    # O método 'before_import_row' NÃO é mais necessário aqui
-    # porque a atribuição da seleção virá diretamente de uma coluna no CSV,
-    # e o 'ForeignKeyWidget' junto com 'import_id_fields' faz o trabalho.
-
-    # 2. Classe Admin para o modelo Candidato
-    # Herda de ImportExportModelAdmin para habilitar os botões de Importar/Exportar.
-@admin.register(Candidato) # Registra o modelo Candidato com esta classe Admin
-class CandidatoAdmin(ImportExportModelAdmin):
-    # Campos a serem exibidos na lista de Candidatos no Admin
-    list_display = (
-        'nome',
-        'inscricao',
-        'cargo',
-        'requisito',
-        'avaliacao',
-        'pontuacao',
-        'analisado',
-        'get_data_importacao',
-        'get_data_analisado',
-        'get_avaliador',
-        'nome',
-        'get_data_formatada',
-        'selecao'
-    )
-    # Campos para filtrar a lista de Candidatos no Admin
-    list_filter = (
-        'cargo',
-        'requisito',
-        'avaliacao',
-        'analisado',
-        'selecao' # Adicionado 'selecao' aos filtros
-    )
-    # Campos para a barra de pesquisa no Admin
-    search_fields = (
-        'nome',
-        'inscricao',
-        'cargo'
-    )
-    # Ordem padrão para a lista de Candidatos
-    ordering = (
-        'nome',
-        'cargo'
-    )
-    # Campos que não podem ser editados manualmente no formulário do Admin
-    readonly_fields = (
-        'pontuacao', 
-        'get_data_importacao',
-        'get_data_analisado',
-        'data_importacao',
-        'get_avaliador'
-    )
-
-    def get_data_formatada(self, obj):
-        if obj.data_importacao:
-             return date_format(obj.data_importacao, "SHORT_DATE_FORMAT")
-        return "-"
-    get_data_formatada.short_description = 'Data/Hora Importação'
-    get_data_formatada.admin_order_field = 'data_importacao'
-
-    def get_data_importacao(self, obj):
-        return obj.data_importacao.strftime("%d/%m/%Y %H:%M") if obj.data_importacao else "-"
-    get_data_importacao.short_description = 'Data de Importação'
-    
-    def get_data_analisado(self, obj):
-        return obj.data_analisado.strftime("%d/%m/%Y %H:%M") if obj.data_analisado else "-"
-    get_data_analisado.short_description = 'Data da Análise'
-    
-    def get_avaliador(self, obj):
-        return obj.avaliador_analise.username if obj.avaliador_analise else "-"
-    get_avaliador.short_description = 'Avaliador'
-
-    # Organização dos campos no formulário de edição do Candidato no Admin
-    fieldsets = (
-        ('Dados Pessoais', {
-            'fields': ('nome', 'inscricao', 'cargo', 'selecao'), # 'selecao' adicionado aqui
-        }),
-        ('Análise Curricular', {
-            'fields': ('requisito', 'avaliacao', 'justificativa', 'observacao'),
-        }),
-        ('Resultados', {
-            'fields': ('pontuacao', 'analisado', 'data_importacao', 'data_analisado', 'avaliador_analise'),
-        }),
-    )
-
-    # Associa a CandidatoResource a esta classe Admin, habilitando import/export.
-    resource_class = CandidatoResource
-
-# 3. Classe Admin para o modelo Selecao
-# Registra o modelo Selecao no Admin.
-class SelecaoAdmin(admin.ModelAdmin):
-    # Campos a serem exibidos na lista de Seleções no Admin
+# Admin para o modelo Selecao
+@admin.register(Selecao)
+class SelecaoAdmin(ImportExportModelAdmin):
     list_display = ('nome', 'ativa', 'descricao')
-    # Campos para filtrar a lista de Seleções
     list_filter = ('ativa',)
-    # Campos para a barra de pesquisa de Seleções
-    search_fields = ('nome', 'descricao')
+    search_fields = ('nome',)
 
-admin.site.register(Selecao, SelecaoAdmin) # <--- Registro explícito para Selecao
-
-class FormQuestionInline(admin.TabularInline):
-    model = FormQuestion
-    extra = 1
-    fields = ('question_text', 'question_type', 'order', 'required', 'options')
-
+# Admin para o modelo FormQuestion
 @admin.register(FormQuestion)
-class FormQuestionAdmin(admin.ModelAdmin):
-    list_display = ('selecao', 'question_text', 'question_type', 'order')
-    list_filter = ('selecao', 'question_type')
-    ordering = ('selecao', 'order')
+class FormQuestionAdmin(ImportExportModelAdmin):
+    list_display = ('question_text', 'selecao', 'question_type', 'order', 'required')
+    list_filter = ('selecao', 'question_type', 'required')
+    search_fields = ('question_text',)
+    list_editable = ('order', 'required')
+    raw_id_fields = ('selecao',)
 
-class SelecaoAdmin(admin.ModelAdmin):
-    inlines = [FormQuestionInline]
+# Admin para o modelo Candidato
+@admin.register(Candidato)
+class CandidatoAdmin(ImportExportModelAdmin):
+    # Use o NOVO CandidatoAdminForm para o formulário de adição/alteração no Admin
+    form = CandidatoAdminForm 
 
+    list_display = (
+        'nome', 'inscricao', 'cargo', 'selecao', 
+        'analisado', 'pontuacao', 'data_analisado', 'avaliador_analise',
+        'declarou_deficiencia', 'tipo_deficiencia_display'
+    )
+    list_filter = (
+        'selecao', 'analisado', 'avaliador_analise', 
+        'declarou_deficiencia',
+    )
+    search_fields = ('nome', 'inscricao', 'cargo')
+    readonly_fields = ('data_importacao', 'data_analisado', 'avaliador_analise', 'pontuacao')
+    
+    fieldsets = (
+        (None, {
+            'fields': ('selecao', 'nome', 'inscricao', 'cargo')
+        }),
+        ('Informações de Deficiência', {
+            'fields': ('declarou_deficiencia', 'tipo_deficiencia'),
+            'classes': ('collapse',)
+        }),
+        ('Status de Análise', {
+            'fields': ('analisado', 'pontuacao', 'data_analisado', 'avaliador_analise'),
+        }),
+        # Exibe o JSONField 'respostas_dinamicas' no admin se você o incluiu no CandidatoAdminForm
+        ('Respostas Dinâmicas do Formulário', {
+             'fields': ('respostas_dinamicas',),
+             'classes': ('collapse',),
+         }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('selecao', 'avaliador_analise')
+
+    def tipo_deficiencia_display(self, obj):
+        return obj.tipo_deficiencia if obj.declarou_deficiencia == 'Sim' else 'N/A'
+    tipo_deficiencia_display.short_description = 'Tipo de Deficiência'
+
+
+# Admin para o modelo DocumentoCandidato
+@admin.register(DocumentoCandidato)
+class DocumentoCandidatoAdmin(ImportExportModelAdmin):
+    list_display = ('candidato', 'tipo', 'arquivo', 'data_upload', 'observacoes')
+    list_filter = ('tipo', 'candidato__selecao')
+    search_fields = ('candidato__nome', 'observacoes')
+    raw_id_fields = ('candidato',)

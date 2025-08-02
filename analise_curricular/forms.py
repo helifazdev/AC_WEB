@@ -1,104 +1,9 @@
-# analise_curricular/forms.py
+# analise_curricular/forms.py (Versão corrigida e com novo formulário para o Admin)
+
 import os
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Candidato, Selecao, DocumentoCandidato, FormQuestion
-
-class CandidatoForm(forms.ModelForm):
-    REQUISITO_CHOICES = [
-        ('', 'Selecione uma opção'),
-        ('Sim', 'Sim'),
-        ('Nao', 'Nao'),
-    ]
-    
-    AVALIACAO_CHOICES = [
-        ('', 'Selecione uma opção'),
-        ('Graduacao', 'Graduacao'),
-        ('Especializacao', 'Especializacao'),
-        ('Mestrado', 'Mestrado'),
-        ('Doutorado', 'Doutorado'),
-        ('Nao possui', 'Nao possui'),
-    ]
-
-    MOTIVO_NAO_POSSUI_CHOICES = [
-        ('', 'Selecione o motivo'),
-        ('sem_documentacao', 'Sem documentação'),
-        ('documentacao_invalida', 'Documentação inválida'),
-        ('documentacao_ilegivel', 'Documentação ilegível'),
-        ('outros', 'Outros'),
-    ]
-
-    requisito = forms.ChoiceField(
-        choices=REQUISITO_CHOICES,
-        widget=forms.RadioSelect,
-        required=True,
-        label="Possui Requisitos para o Cargo?"
-    )
-    
-    avaliacao = forms.ChoiceField(
-        choices=AVALIACAO_CHOICES,
-        widget=forms.RadioSelect,
-        required=True,
-        label="Avaliação Curricular"
-    )
-
-    motivo_nao_possui = forms.ChoiceField(
-        choices=MOTIVO_NAO_POSSUI_CHOICES,
-        widget=forms.RadioSelect,
-        required=False,
-        label="Motivo para 'Não possui'"
-    )
-    
-    justificativa = forms.CharField(
-        widget=forms.Textarea(attrs={'rows': 3}),
-        required=False,
-        label="Justificativa"
-    )
-
-    class Meta:
-        model = Candidato
-        fields = [
-            'nome',
-            'inscricao',
-            'cargo',
-            'requisito',
-            'avaliacao',
-            'justificativa',
-            'observacao'
-        ]
-        widgets = {
-            'nome': forms.TextInput(attrs={'readonly': True}),
-            'inscricao': forms.TextInput(attrs={'readonly': True}),
-            'cargo': forms.TextInput(attrs={'readonly': True}),
-            'observacao': forms.Textarea(attrs={'rows': 4}),
-        }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Adiciona classes CSS consistentes
-        for field_name, field in self.fields.items():
-            if isinstance(field.widget, forms.TextInput):
-                field.widget.attrs.update({'class': 'form-control'})
-            elif isinstance(field.widget, forms.Textarea):
-                field.widget.attrs.update({'class': 'form-control'})
-            elif isinstance(field.widget, forms.RadioSelect):
-                field.widget.attrs.update({'class': 'form-radio'})
-
-    def clean(self):
-        cleaned_data = super().clean()
-        avaliacao = cleaned_data.get('avaliacao')
-        motivo_nao_possui = cleaned_data.get('motivo_nao_possui')
-        justificativa = cleaned_data.get('justificativa')
-
-        # Se "Nao possui" for selecionado, motivo é obrigatório
-        if avaliacao == 'Nao possui' and not motivo_nao_possui:
-            self.add_error('motivo_nao_possui', "Selecione o motivo para 'Não possui'.")    
-        # Validação da justificativa
-        if avaliacao == 'Nao possui' and not justificativa:
-            self.add_error('justificativa', "Por favor, forneça uma justificativa para 'Não possui'")
-        
-        return cleaned_data
-
+from .models import Candidato, Selecao, FormQuestion 
 
 class AvaliadorSignUpForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -120,81 +25,193 @@ class SelecaoForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=True
     )
-class DocumentoForm(forms.ModelForm):
-    arquivo = forms.FileField(
-        label="Selecione o arquivo",
-        widget=forms.ClearableFileInput(attrs={
-            'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx',
-            'class': 'form-control-file'
-        }),
-        help_text="Formatos aceitos: PDF, JPG, PNG, DOC (Máx. 5MB)"
-    )
+
+# NOVO FORMULÁRIO: CandidatoAdminForm (para uso exclusivo no Django Admin)
+class CandidatoAdminForm(forms.ModelForm):
+    class Meta:
+        model = Candidato
+        # Liste AQUI todos os campos do modelo Candidato que você quer editar no Admin.
+        # Inclua todos os campos fixos, e também 'respostas_dinamicas' se quiser visualizá-lo.
+        fields = [
+            'selecao', 
+            'nome', 
+            'inscricao', 
+            'cargo', 
+            'declarou_deficiencia', 
+            'tipo_deficiencia', 
+            'pontuacao', 
+            'analisado', 
+            'data_analisado', 
+            'avaliador_analise',
+            'respostas_dinamicas', # Para poder ver o JSON no Admin
+        ]
+        widgets = {
+            'respostas_dinamicas': forms.Textarea(attrs={'rows': 5, 'readonly': True}), # Opcional: mostrar como readonly
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Você pode aplicar estilos aqui para o Admin, se quiser
+        # Exemplo: self.fields['nome'].widget.attrs.update({'class': 'vTextField'})
+
+
+# DynamicCandidatoForm (este será o formulário usado pelos avaliadores, permanece como está)
+class DynamicCandidatoForm(forms.ModelForm):
+    # Campos de Deficiência como READONLY neste formulário
+    DECLAROU_DEFICIENCIA_CHOICES = [
+        ('Sim', 'Sim'),
+        ('Nao', 'Não'),
+    ]
 
     class Meta:
-        model = DocumentoCandidato
-        fields = ['tipo', 'arquivo', 'observacoes']
+        model = Candidato
+        fields = [
+            'nome', 
+            'inscricao', 
+            'cargo', 
+            'declarou_deficiencia', # Agora é somente leitura
+            'tipo_deficiencia',     # Agora é somente leitura
+        ]
         widgets = {
-            'tipo': forms.Select(attrs={'class': 'form-control'}),
-            'observacoes': forms.Textarea(attrs={
-                'rows': 3,
-                'class': 'form-control',
-                'placeholder': 'Observações adicionais sobre o documento'
-            }),
-        }
-    
-    def clean_arquivo(self):
-        arquivo = self.cleaned_data.get('arquivo')
-        if not arquivo:
-            raise forms.ValidationError("Por favor, selecione um arquivo")
+            'nome': forms.TextInput(attrs={'readonly': True, 'class': 'form-control'}),
+            'inscricao': forms.TextInput(attrs={'readonly': True, 'class': 'form-control'}),
+            'cargo': forms.TextInput(attrs={'readonly': True, 'class': 'form-control'}),
             
-        # Validação de tamanho (5MB)
-        if arquivo.size > 5 * 1024 * 1024:
-            raise forms.ValidationError("O arquivo excede o tamanho máximo de 5MB")
-        
-        # Validação de extensão
-        extensoes_validas = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']
-        extensao = os.path.splitext(arquivo.name)[1].lower()
-        
-        if extensao not in extensoes_validas:
-            raise forms.ValidationError(
-                "Tipo de arquivo não suportado. Use: " + 
-                ", ".join(ext[1:] for ext in extensoes_validas)
-            )
+            # Campos de Deficiência como READONLY/DISABLED para o AVALIADOR
+            'declarou_deficiencia': forms.RadioSelect(attrs={'disabled': True}),
+            'tipo_deficiencia': forms.Textarea(attrs={'readonly': True, 'rows': 3}),
+        }
 
-class DynamicCandidatoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         selecao_id = kwargs.pop('selecao_id', None)
         super().__init__(*args, **kwargs)
         
-        if selecao_id:
-            # Adiciona campos dinâmicos baseados nas perguntas da seleção
-            questions = FormQuestion.objects.filter(selecao_id=selecao_id).order_by('order')
+        if 'declarou_deficiencia' in self.fields:
+            self.fields['declarou_deficiencia'].choices = Candidato.SIM_NAO_CHOICES
+        
+        for field_name, field in self.fields.items():
+            # Aplica classes para campos que não são nome, inscricao, cargo, deficiência
+            if field_name not in ['nome', 'inscricao', 'cargo', 'declarou_deficiencia', 'tipo_deficiencia']:
+                if isinstance(field.widget, (forms.TextInput, forms.Textarea, forms.Select)):
+                    field.widget.attrs.update({'class': 'form-control'})
+                elif isinstance(field.widget, forms.RadioSelect):
+                    field.widget.attrs.update({'class': 'form-radio'})
             
+            # Re-garante que campos de deficiência são desabilitados/somente leitura para o avaliador
+            if field_name in ['declarou_deficiencia', 'tipo_deficiencia']:
+                 self.fields[field_name].widget.attrs['readonly'] = True
+                 self.fields[field_name].widget.attrs['disabled'] = True
+                 self.fields[field_name].required = False # Campos disabled não podem ser required
+
+
+        if selecao_id:
+            questions = FormQuestion.objects.filter(selecao_id=selecao_id).order_by('order')
+            instance_respostas = self.instance.respostas_dinamicas if self.instance and self.instance.pk else {}
+
             for question in questions:
                 field_name = f'question_{question.id}'
-                
+                initial_value = instance_respostas.get(str(question.id))
+
                 if question.question_type == 'text':
                     self.fields[field_name] = forms.CharField(
                         label=question.question_text,
                         required=question.required,
+                        initial=initial_value,
                         widget=forms.TextInput(attrs={'class': 'form-control'})
                     )
+                elif question.question_type == 'number':
+                    self.fields[field_name] = forms.IntegerField(
+                        label=question.question_text,
+                        required=question.required,
+                        initial=initial_value,
+                        widget=forms.NumberInput(attrs={'class': 'form-control'})
+                    )
+                elif question.question_type == 'textarea':
+                    self.fields[field_name] = forms.CharField(
+                        label=question.question_text,
+                        required=question.required,
+                        initial=initial_value,
+                        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+                    )
                 elif question.question_type == 'select':
+                    choices = []
+                    if not question.required:
+                        choices.append(('', '---------'))
+                    choices.extend([(opt['value'], opt['text']) for opt in question.options])
+                    self.fields[field_name] = forms.ChoiceField(
+                        label=question.question_text,
+                        choices=choices,
+                        required=question.required,
+                        initial=initial_value,
+                        widget=forms.Select(attrs={'class': 'form-control'})
+                    )
+                elif question.question_type == 'checkbox':
+                    choices = [(opt['value'], opt['text']) for opt in question.options]
+                    self.fields[field_name] = forms.MultipleChoiceField(
+                        label=question.question_text,
+                        choices=choices,
+                        required=question.required,
+                        initial=initial_value,
+                        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'})
+                    )
+                elif question.question_type == 'radio':
                     choices = [(opt['value'], opt['text']) for opt in question.options]
                     self.fields[field_name] = forms.ChoiceField(
                         label=question.question_text,
                         choices=choices,
                         required=question.required,
-                        widget=forms.Select(attrs={'class': 'form-control'})
+                        initial=initial_value,
+                        widget=forms.RadioSelect(attrs={'class': 'form-radio'})
                     )
-                # Adicione outros tipos de perguntas conforme necessário
+                
+                if isinstance(self.fields[field_name].widget, forms.RadioSelect):
+                    self.fields[field_name].widget.attrs.update({'class': 'form-radio'})
 
-    class Meta:
-        model = Candidato
-        fields = ['nome', 'inscricao', 'cargo', 'observacao']
-        widgets = {
-            'nome': forms.TextInput(attrs={'readonly': True}),
-            'inscricao': forms.TextInput(attrs={'readonly': True}),
-            'cargo': forms.TextInput(attrs={'readonly': True}),
-            'observacao': forms.Textarea(attrs={'rows': 4, 'class': 'form-control'}),
-        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # A validação de declarou_deficiencia e tipo_deficiencia agora deve ser feita no CandidatoAdminForm
+        # ou diretamente no modelo Candidato se precisar ser mais abrangente,
+        # pois esses campos não são editáveis (e portanto não estão em cleaned_data) aqui.
+
+        dynamic_responses = {}
+        selecao_id_for_questions = self.instance.selecao.id if self.instance and self.instance.selecao else None
+
+        for name, value in cleaned_data.items():
+            if name.startswith('question_'):
+                question_id = name.replace('question_', '')
+                dynamic_responses[question_id] = value
+        
+        self.instance.respostas_dinamicas = dynamic_responses 
+
+        if selecao_id_for_questions: 
+            avaliacao_question = FormQuestion.objects.filter(
+                selecao_id=selecao_id_for_questions,
+                question_text__icontains="Avaliação Curricular"
+            ).first()
+
+            motivo_nao_possui_question = FormQuestion.objects.filter(
+                selecao_id=selecao_id_for_questions,
+                question_text__icontains="Motivo para 'Não possui'"
+            ).first()
+
+            justificativa_question = FormQuestion.objects.filter(
+                selecao_id=selecao_id_for_questions,
+                question_text__icontains="Justificativa"
+            ).first()
+
+            if avaliacao_question:
+                avaliacao_valor_dinamico = dynamic_responses.get(str(avaliacao_question.id))
+                if avaliacao_valor_dinamico == 'Nao possui':
+                    if motivo_nao_possui_question:
+                        motivo_valor_dinamico = dynamic_responses.get(str(motivo_nao_possui_question.id))
+                        if not motivo_valor_dinamico:
+                            self.add_error(f'question_{motivo_nao_possui_question.id}', "Selecione o motivo para 'Não possui'.")
+                        elif motivo_valor_dinamico == 'outros':
+                            if justificativa_question:
+                                justificativa_valor_dinamica = dynamic_responses.get(str(justificativa_question.id))
+                                if not justificativa_valor_dinamica:
+                                    self.add_error(f'question_{justificativa_question.id}', "Por favor, forneça uma justificativa para 'Não possui' quando o motivo for 'Outros'.")
+
+        return cleaned_data

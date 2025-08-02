@@ -891,3 +891,27 @@ svg {
 .back-button:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
+
+.read-only-field-display {
+        display: block; /* Para que o p ocupe a largura total */
+        width: 100%; /* Opcional, dependendo do layout */
+        padding: .375rem .75rem; /* Padding igual ao de um input */
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057; /* Cor do texto */
+        background-color: #e9ecef; /* Um cinza claro para indicar readonly */
+        background-clip: padding-box;
+        border: 1px solid #ced4da; /* Borda */
+        border-radius: .25rem; /* Arredondamento */
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        height: calc(1.5em + .75rem + 2px); /* Altura igual à de um input padrão */
+        overflow: hidden; /* Para garantir que o texto não vaze se for muito longo */
+        white-space: nowrap; /* Impede que o texto quebre linha */
+        text-overflow: ellipsis; /* Adiciona reticências se o texto for muito longo */
+    }
+    
+.form-check-input[disabled] + label,
+.form-radio input[type="radio"][disabled] + label {
+    opacity: 0.65; /* Torna o texto do label mais claro para indicar desabilitado */
+    cursor: not-allowed;
+}

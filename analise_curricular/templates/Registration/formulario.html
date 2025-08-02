@@ -1,5 +1,6 @@
 {% load static %}
 {% load i18n %}
+{% load analise_curricular_tags %} 
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -11,38 +12,33 @@
 </head>
 <body>
     <div class="app-container">
-        <script>
-    console.log("Script carregado!"); // Verifique no console do navegador se aparece
-</script>
-        <!-- Cabeçalho único (removi a duplicação) -->
         <header class="app-header">
             <h1>
-                <img src="{% static 'Logo.ico' %}" alt="" class="logo"> Análise Curricular
+                <img src="{% static 'Logo.ico' %}" alt="" class="logo"> Análise 
                 {% if selecao_nome %}
                     <span class="selection-name"> - {{ selecao_nome }}</span>
                 {% endif %}
             </h1>
             <div class="header-info">
-                
                 {% if request.user.is_authenticated %}
                 <div class="user-info">
-                <a href="{% url 'painel_avaliador' selecao_id|default:candidato.selecao.id %}" class="back-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 12H5"></path>
-                        <path d="M12 19l-7-7 7-7"></path>
-                    </svg>
-                    Voltar
-                </a>
-                <span class="welcome-message">Olá, <strong>{{ request.user.username }}</strong></span>
-                <a href="{% url 'logout' %}" class="logout-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
-                    Sair
-                </a>
-            </div>
+                    <a href="{% url 'painel_avaliador' selecao_id|default:candidato.selecao.id %}" class="back-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                        Voltar
+                    </a>
+                    <span class="welcome-message">Olá, <strong>{{ request.user.username }}</strong></span>
+                    <a href="{% url 'logout' %}" class="logout-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Sair
+                    </a>
+                </div>
                 {% endif %}
             </div> 
         </header>
@@ -50,25 +46,41 @@
         <form method="post" enctype="multipart/form-data" class="evaluation-form" id="evaluationForm">
             {% csrf_token %}
 
-            <!-- Seção de Dados do Candidato -->
             <section class="candidate-card">
                 <h2 class="section-title">Dados do Candidato</h2>
                 <div class="candidate-info-group">
-                    {% for field in form.visible_fields %}
-                        {% if field.name in 'nome,inscricao,cargo' %}
+                    <div class="form-group">
+                        <label>Nome do Candidato:</label>
+                        <p class="read-only-field">{{ candidato.nome }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Número de Inscrição:</label>
+                        <p class="read-only-field">{{ candidato.inscricao }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Cargo/Função:</label>
+                        <p class="read-only-field">{{ candidato.cargo }}</p>
+                    </div>
+                    
+                    {# NOVA SEÇÃO DE DEFICIÊNCIA COMO DADOS DE LEITURA #}
+                    {% if candidato.declarou_deficiencia %}
                         <div class="form-group">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}:</label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <div class="form-error">{{ field.errors }}</div>
-                            {% endif %}
+                            <label>Possui deficiência:</label>
+                            <p class="read-only-field">{{ candidato.declarou_deficiencia }}</p>
                         </div>
+                        {# Exibe o tipo de deficiência SOMENTE SE "Sim" #}
+                        {% if candidato.declarou_deficiencia == 'Sim' and candidato.tipo_deficiencia %}
+                            <div class="form-group">
+                                <label>Tipo de deficiência:</label>
+                                <p class="read-only-field">{{ candidato.tipo_deficiencia }}</p>
+                            </div>
                         {% endif %}
-                    {% endfor %}
+                    {% endif %}
+                    {# FIM DA NOVA SEÇÃO DE DEFICIÊNCIA #}
+
                 </div>
             </section>
 
-        <!-- Seção de Documentos -->
             <section class="evaluation-section">
                 <h2 class="section-title">Documentos do Candidato</h2>
                 {% if documentos_candidato %}
@@ -86,78 +98,45 @@
                 {% endif %}
             </section>
 
-   <section class="evaluation-section">
-    <h2 class="section-title">Avaliação Curricular</h2>
-    
-    <!-- Campos fixos do seu form (requisito e titulo) -->
-    {% for field in form %}
-        {% if field.name in 'requisito,titulo' %}
-        <div class="form-group">
-            <label>{{ field.label }}</label>
-            {{ field }}
-        </div>
-        {% endif %}
-    {% endfor %}
-    
-    <!-- Perguntas dinâmicas do admin -->
-    {% for pergunta in perguntas %}
-    <div class="form-group" id="pergunta-{{ pergunta.id }}">
-        <label>{{ pergunta.question_text }}{% if pergunta.required %}*{% endif %}</label>
-        
-        {% if pergunta.question_type == 'radio' or pergunta.question_type == 'select' %}
-            <select name="pergunta_{{ pergunta.id }}" class="form-control" {% if pergunta.required %}required{% endif %}>
-                {% for opcao in pergunta.options %}
-                <option value="{{ opcao.value }}">{{ opcao.text }}</option>
-                {% endfor %}
-            </select>
-        
-        {% elif pergunta.question_type == 'checkbox' %}
-            {% for opcao in pergunta.options %}
-            <label class="checkbox-label">
-                <input type="checkbox" name="pergunta_{{ pergunta.id }}" value="{{ opcao.value }}">
-                {{ opcao.text }}
-            </label>
-            {% endfor %}
-            
-        {% else %} <!-- text, number, etc -->
-            <input type="{{ pergunta.question_type }}" name="pergunta_{{ pergunta.id }}" 
-                   class="form-control" {% if pergunta.required %}required{% endif %}>
-        {% endif %}
-    </div>
-    {% endfor %}
-    
-    <!-- Mantenha as seções condicionais existentes -->
-    <div id="motivo-nao-possui-section" style="display: none;">
-        {{ form.motivo_nao_possui }}
-    </div>
-    
-    <div id="justificativa-section" style="display: none;">
-        {{ form.justificativa }}
-    </div>
-</section>
+            <section class="evaluation-section">
+                <h2 class="section-title">Avaliação Curricular</h2>
+                
+                {% for pergunta in perguntas %}
+                <div class="form-group dynamic-question-group" 
+                    id="pergunta-{{ pergunta.id }}" 
+                    data-question-type="{{ pergunta.question_type }}"
+                    data-question-id="{{ pergunta.id }}"
+                    data-conditions='{{ pergunta.conditions|safe }}' 
+                    style="{% if pergunta.conditions %}display: none;{% endif %}" >
+                    
+                    <label>{{ pergunta.question_text }}{% if pergunta.required %}*{% endif %}</label>
+                    
+                    {% if pergunta.question_type == 'radio' %}
+                        {{ form|get_dynamic_field_by_id:pergunta.id }}
+                    {% elif pergunta.question_type == 'select' %}
+                        {{ form|get_dynamic_field_by_id:pergunta.id }}
+                    {% elif pergunta.question_type == 'checkbox' %}
+                        <div class="checkbox-group">
+                            {{ form|get_dynamic_field_by_id:pergunta.id }}
+                        </div>
+                    {% else %} {# text, number, textarea #}
+                        {{ form|get_dynamic_field_by_id:pergunta.id }}
+                    {% endif %}
 
-
-
-        <!-- Seção de Observações -->
-        <section class="evaluation-section">
-            <h2 class="section-title">{{ form.observacao.label }}</h2>
-            <div class="form-group">
-                    {{ form.observacao }}
-                    {% if form.observacao.errors %}
-                        <div class="form-error">{{ form.observacao.errors }}</div>
+                    {% if form|get_dynamic_field_by_id:pergunta.id.errors %}
+                        <div class="form-error">{{ form|get_dynamic_field_by_id:pergunta.id.errors }}</div>
                     {% endif %}
                 </div>
+                {% endfor %}
+                
+            </section>
 
-                {% if candidato.data_analisado %}
+            {% if candidato.data_analisado %}
             <div class="evaluation-info">
                 Avaliado em {{ candidato.data_analisado|date:"d/m/Y H:i" }} por <strong>{{ candidato.avaliador_analise.get_full_name|default:candidato.avaliador_analise.username }}</strong>
             </div>
             {% endif %}
-            </section>
 
-            
-
-            <!-- Navegação -->
             <div class="form-navigation">
                 {% if anterior_candidato_id %}
                     <a href="{% url 'analisar_candidato' anterior_candidato_id %}" class="nav-button prev">
@@ -168,7 +147,7 @@
                 {% endif %}
 
                 <button type="submit" class="nav-button next" id="submitButton">
-                    {% if indice_atual == total_candidatos %}Finalizar{% else %}Próximo &rarr;{% endif %}
+                    {% if proximo_candidato_id %}Salvar e Próximo &rarr;{% else %}Finalizar Análise{% endif %}
                 </button>
             </div>
         </form>
@@ -181,7 +160,6 @@
         </footer>
     </div>
 
-    <!-- Modal de Alerta -->
     <div id="alertModal" class="modal">
         <div class="modal-content">
             <div class="modal-icon">⚠️</div>
@@ -191,30 +169,68 @@
         </div>
     </div>
 
-  <script>
+    <div class="django-messages-container">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="django-message {% if message.tags %}{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- 1. SELEÇÃO DOS ELEMENTOS ---
     const form = document.getElementById('evaluationForm');
-    const motivoSection = document.getElementById('motivo-nao-possui-section');
-    const justificativaSection = document.getElementById('justificativa-section');
-    const justificativaTextarea = document.getElementById('id_justificativa');
     const modal = document.getElementById('alertModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalMessage = document.getElementById('modalMessage');
     const modalButton = document.getElementById('modalButton');
     const modalIcon = document.querySelector('#alertModal .modal-icon');
+    const submitButton = document.getElementById('submitButton');
 
-    // Função para pegar valor selecionado dos radios
-    function getRadioValue(name) {
-        const checked = document.querySelector(`input[name="${name}"]:checked`);
-        return checked ? checked.value : '';
+ 
+    function getFieldValue(name) {
+              let field = document.querySelector(`[name="${name}"]`);
+        if (field) {
+            if (field.type === 'radio') {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                return checked ? checked.value : '';
+            } else if (field.tagName === 'SELECT') {
+                return field.value;
+            } else if (field.type === 'checkbox') {
+                const checkedCheckboxes = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+                                              .map(cb => cb.value);
+                return checkedCheckboxes;
+            } else { // text, number, textarea
+                return field.value;
+            }
+        }
+        
+        // Se não encontrou um campo fixo com o nome exato, procura por campos dinâmicos ('question_ID')
+        const dynamicFields = document.querySelectorAll(`[name^="${name}"]`); 
+        if (dynamicFields.length > 0) {
+            const firstDynamicField = dynamicFields[0]; 
+            if (firstDynamicField.type === 'radio') {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                return checked ? checked.value : '';
+            } else if (firstDynamicField.tagName === 'SELECT') {
+                return firstDynamicField.value;
+            } else if (firstDynamicField.type === 'checkbox') {
+                const checkedCheckboxes = Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+                                              .map(cb => cb.value);
+                return checkedCheckboxes;
+            } else { 
+                return firstDynamicField.value;
+            }
+        }
+        return '';
     }
 
-    // --- 2. FUNÇÕES ---
     function showAlert(title, message, isWarning = false) {
         modalTitle.textContent = title;
         modalMessage.textContent = message;
-        modalButton.textContent = 'Entendi!';
+        modalButton.textContent = 'Entendido!';
         modalIcon.textContent = isWarning ? '⚠️' : '❌';
         modalTitle.style.color = isWarning ? '#f0ad4e' : '#d9534f';
         modal.style.display = 'flex';
@@ -224,160 +240,270 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.style.display = 'none';
     }
 
-    function toggleMotivoEJustificativa() {
-        const avaliacaoValue = getRadioValue('avaliacao');
-        
-        // Mostrar/ocultar motivo_nao_possui
-        if (avaliacaoValue === 'Nao possui') {
-            motivoSection.style.display = 'block';
-            
-            // Mostrar/ocultar justificativa se motivo for "Outros"
-            const motivoValue = getRadioValue('motivo_nao_possui');
-            if (motivoValue === 'outros') {
-                justificativaSection.style.display = 'block';
-                justificativaTextarea.required = true;
-            } else {
-                justificativaSection.style.display = 'none';
-                justificativaTextarea.required = false;
-            }
+    // REMOVIDA A FUNÇÃO toggleTipoDeficiencia INTEIRA
+    /*
+    function toggleTipoDeficiencia() {
+        const declarou = getFieldValue('declarou_deficiencia'); 
+        if (declarou === 'Sim') {
+            tipoDeficienciaSection.style.display = 'block';
         } else {
-            motivoSection.style.display = 'none';
-            justificativaSection.style.display = 'none';
-            justificativaTextarea.required = false;
+            tipoDeficienciaSection.style.display = 'none';
         }
     }
+    */
 
-      function verificarCondicoes() {
-        {% for pergunta in perguntas %}
-            {% if pergunta.conditions %}
-                // Lógica para mostrar/ocultar com base nas condições
-                const pergunta{{ pergunta.id }} = document.getElementById('pergunta-{{ pergunta.id }}');
-                const dependenteDe = "{{ pergunta.conditions.depends_on }}";
-                const valorEsperado = "{{ pergunta.conditions.value }}";
-                
-                // Verifica se a pergunta dependente tem o valor esperado
-                const elementoDependente = document.querySelector(`[name="${dependenteDe}"]`);
-                if (elementoDependente) {
-                    const deveMostrar = elementoDependente.value === valorEsperado;
-                    pergunta{{ pergunta.id }}.style.display = deveMostrar ? 'block' : 'none';
-                    
-                    // Atualiza quando o campo dependente muda
-                    elementoDependente.addEventListener('change', function() {
-                        pergunta{{ pergunta.id }}.style.display = this.value === valorEsperado ? 'block' : 'none';
-                    });
-                }
-            {% endif %}
-        {% endfor %}
-    }}
-    
+    function handleDynamicQuestionVisibility() {
+        document.querySelectorAll('.dynamic-question-group').forEach(questionGroup => {
+            const conditionsRaw = questionGroup.dataset.conditions;
+            if (!conditionsRaw || conditionsRaw === 'None') return;
 
-    // --- 3. EVENTOS ---
-    // Adiciona evento para todos radios de requisito
-    document.querySelectorAll('input[name="requisito"]').forEach(function(radio) {
-        radio.addEventListener('change', function() {
-            const valorNao = 'Nao';
-            if (this.value === valorNao) {
-                showAlert(
-                    'Candidato Eliminado',
-                    'O candidato não possui os requisitos mínimos para o cargo. A avaliação pode continuar, mas o status será de eliminado.',
-                    true
-                );
+            let conditions;
+            try {
+                conditions = JSON.parse(conditionsRaw);
+            } catch (e) {
+                console.error("Erro ao fazer parse das condições JSON:", e, conditionsRaw);
+                return;
             }
+            
+            const dependsOnFieldName = conditions.depends_on;
+            const operator = conditions.operator;
+            const expectedValue = conditions.value;
+            const action = conditions.action;
+
+            const dependentFieldElements = document.querySelectorAll(`[name="${dependsOnFieldName}"]`);
+            if (dependentFieldElements.length === 0) {
+                return; 
+            }
+
+            if (!questionGroup.dataset.hasListener) {
+                dependentFieldElements.forEach(elem => {
+                    elem.addEventListener('change', checkVisibility);
+                    if (elem.tagName === 'INPUT' && (elem.type === 'text' || elem.type === 'number')) {
+                        elem.addEventListener('input', checkVisibility);
+                    }
+                });
+                questionGroup.dataset.hasListener = 'true';
+            }
+            
+            const checkVisibility = () => {
+                let currentValue = getFieldValue(dependsOnFieldName);
+                let conditionMet = false;
+
+                switch (operator) {
+                    case 'equals':
+                        if (Array.isArray(currentValue)) {
+                            conditionMet = currentValue.includes(expectedValue);
+                        } else {
+                            conditionMet = String(currentValue) === String(expectedValue);
+                        }
+                        break;
+                    case 'not_equals':
+                        if (Array.isArray(currentValue)) {
+                            conditionMet = !currentValue.includes(expectedValue);
+                        } else {
+                            conditionMet = String(currentValue) !== String(expectedValue);
+                        }
+                        break;
+                    default:
+                        console.warn(`Operador desconhecido: ${operator} para ${dependsOnFieldName}`);
+                        return;
+                }
+
+                let shouldDisplay;
+                if (action === 'show') {
+                    shouldDisplay = conditionMet;
+                } else if (action === 'hide') {
+                    shouldDisplay = !conditionMet;
+                } else {
+                    console.warn(`Ação desconhecida: ${action} para ${dependsOnFieldName}`);
+                    return;
+                }
+
+                questionGroup.style.display = shouldDisplay ? 'block' : 'none';
+                
+                Array.from(questionGroup.querySelectorAll('input, select, textarea')).forEach(input => {
+                    const originalRequired = questionGroup.dataset.originalRequired === 'true';
+
+                    if (shouldDisplay) {
+                        if (originalRequired) {
+                            input.setAttribute('required', 'required');
+                        }
+                    } else {
+                        input.removeAttribute('required');
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            input.checked = false;
+                        } else if (input.tagName === 'SELECT') {
+                            input.value = '';
+                        } else {
+                            input.value = '';
+                        }
+                    }
+                });
+            };
+
+            checkVisibility();
         });
-    });
+    }
 
-    // Adiciona evento para todos radios de avaliacao
-    document.querySelectorAll('input[name="avaliacao"]').forEach(function(radio) {
-        radio.addEventListener('change', toggleMotivoEJustificativa);
-    });
-
-    // Adiciona evento para todos radios de motivo_nao_possui
-    document.querySelectorAll('input[name="motivo_nao_possui"]').forEach(function(radio) {
-        radio.addEventListener('change', toggleMotivoEJustificativa);
-    });
+    function displayDjangoMessages() {
+        const messagesContainer = document.querySelector('.django-messages-container');
+        if (messagesContainer) {
+            messagesContainer.style.display = 'block';
+            setTimeout(() => {
+                messagesContainer.style.display = 'none';
+                messagesContainer.innerHTML = '';
+            }, 5000);
+        }
+    }
 
     modalButton.addEventListener('click', closeModal);
 
     form.addEventListener('submit', function(event) {
-        const avaliacaoValue = getRadioValue('avaliacao');
-        const motivoValue = getRadioValue('motivo_nao_possui');
+        event.preventDefault();
+
+        let isValid = true;
         
-        // Validação para quando "Não possui" está selecionado
-        if (avaliacaoValue === 'Nao possui') {
-            // Se motivo for "Outros" e justificativa estiver vazia
-            if (motivoValue === 'outros' && !justificativaTextarea.value.trim()) {
-                event.preventDefault();
-                showAlert(
-                    'Justificativa Obrigatória',
-                    'O campo "Justificativa" deve ser preenchido quando o motivo é "Outros".'
-                );
-                justificativaTextarea.focus();
+        // Validação de campos dinâmicos obrigatórios visíveis
+        document.querySelectorAll('.dynamic-question-group').forEach(questionGroup => {
+            if (questionGroup.style.display !== 'none') {
+                const inputs = questionGroup.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.hasAttribute('required')) {
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            const groupName = input.name;
+                            const anyChecked = document.querySelector(`input[name="${groupName}"]:checked`);
+                            if (!anyChecked) {
+                                showAlert('Campo Obrigatório', `Por favor, selecione uma opção para "${questionGroup.querySelector('label').textContent.replace('*', '').trim()}".`);
+                                isValid = false;
+                            }
+                        } else if (!input.value.trim()) {
+                            showAlert('Campo Obrigatório', `Por favor, preencha o campo "${questionGroup.querySelector('label').textContent.replace('*', '').trim()}".`);
+                            input.focus();
+                            isValid = false;
+                        }
+                    }
+                });
             }
-            // Se nenhum motivo estiver selecionado
-            else if (!motivoValue) {
-                event.preventDefault();
-                showAlert(
-                    'Motivo Obrigatório',
-                    'Por favor, selecione um motivo quando a avaliação é "Não possui".'
-                );
-            }
-        }
-    });
-
-    // --- 4. INICIALIZAÇÃO ---
-    toggleMotivoEJustificativa(); // Configura o estado inicial dos campos
- // --- 5. DETECÇÃO DE MUDANÇAS E SALVAMENTO AUTOMÁTICO ---
-    const fieldsToWatch = document.querySelectorAll('input[type="radio"], textarea, input[type="text"]');
-    let savingTimeout;
-
-    fieldsToWatch.forEach(field => {
-        field.addEventListener('change', () => {
-            clearTimeout(savingTimeout);
-
-            // Mostrar feedback visual (opcional)
-            // Por exemplo, desabilitar o botão de submit ou mostrar uma mensagem "Salvando..."
-            // document.getElementById('submitButton').disabled = true;
-            // document.getElementById('submitButton').textContent = 'Salvando...';
-
-            savingTimeout = setTimeout(saveFormData, 1000); // Salva após 1 segundo de inatividade
         });
-    
-    });
 
-    function saveFormData() {
+        if (!isValid) {
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'Salvando...';
+
         const formData = new FormData(form);
+        formData.append('is_ajax', 'true');
 
         fetch(form.action, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest' // Para identificar requisições AJAX no Django
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
-
-     /*    .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
-                // Atualizar visualmente o status do candidato no painel, se necessário
-                console.log('Dados salvos com sucesso!', data);
-                // Redirecionar para o painel do avaliador
-                // window.location.href = "{% url 'painel_avaliador' selecao_id %}";
+                console.log('Dados salvos com sucesso!', data.message);
+                {% if proximo_candidato_id %}
+                    window.location.href = "{% url 'analisar_candidato' proximo_candidato_id %}";
+                {% else %}
+                    window.location.href = "{% url 'finalizar_analise' %}";
+                {% endif %}
             } else {
-                showAlert('Erro ao salvar', data.errors || 'Ocorreu um erro ao salvar os dados.');
+                showAlert('Erro ao salvar', data.errors ? JSON.stringify(data.errors, null, 2) : 'Ocorreu um erro ao salvar os dados.');
                 console.error('Erro ao salvar dados:', data);
             }
-        }) */
-
+        })
         .catch(error => {
-            showAlert('Erro de conexão', 'Não foi possível conectar ao servidor.');
-            console.error('Erro de conexão:', error);
+            console.error('Erro de requisição:', error);
+            let errorMessage = 'Não foi possível conectar ao servidor.';
+            if (error && error.message) {
+                 errorMessage = `Erro: ${error.message}`;
+            } else if (error && typeof error === 'object') {
+                errorMessage = `Erro de validação: ${JSON.stringify(error)}`;
+            }
+            showAlert('Erro de Conexão', errorMessage);
         })
         .finally(() => {
-            // Restaurar feedback visual (opcional)
-            // document.getElementById('submitButton').disabled = false;
-            // document.getElementById('submitButton').textContent = "{% if indice_atual == total_candidatos %}Finalizar{% else %}Próximo &rarr;{% endif %}";
+            submitButton.disabled = false;
+            submitButton.textContent = "{% if proximo_candidato_id %}Salvar e Próximo &rarr;{% else %}Finalizar Análise{% endif %}";
         });
+    });
+
+    // Removida a chamada a toggleTipoDeficiencia, pois a exibição agora é puramente via template.
+    // toggleTipoDeficiencia(); 
+    handleDynamicQuestionVisibility(); // Continua para gerenciar as FormQuestions
+    displayDjangoMessages();
+
+    // fieldsForAutosave agora só precisa dos campos dinâmicos ('question_')
+    const fieldsForAutosave = document.querySelectorAll(
+        '[name^="question_"]'
+    );
+    let savingTimeout;
+    let isSaving = false;
+
+    function triggerAutosave() {
+        if (isSaving) return;
+        isSaving = true;
+
+        clearTimeout(savingTimeout);
+        savingTimeout = setTimeout(() => {
+            console.log("Iniciando autosave...");
+            const formData = new FormData(form);
+            formData.append('is_ajax', 'true');
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Autosave: Dados salvos com sucesso!');
+                } else {
+                    console.error('Autosave: Erro ao salvar dados:', data.errors);
+                }
+            })
+            .catch(error => {
+                console.error('Autosave: Erro de conexão ou inesperado:', error);
+            })
+            .finally(() => {
+                isSaving = false;
+            });
+        }, 2000);
     }
+
+    fieldsForAutosave.forEach(field => {
+        const eventType = (field.tagName === 'INPUT' && (field.type === 'text' || field.type === 'number')) ? 'input' : 'change';
+        field.addEventListener(eventType, triggerAutosave);
+    });
+
+    document.querySelectorAll('.dynamic-question-group').forEach(questionGroup => {
+        const questionId = questionGroup.dataset.questionId;
+        const initialInput = questionGroup.querySelector(`[name="question_${questionId}"]`);
+        let originalRequired = false;
+        if (initialInput) {
+            originalRequired = initialInput.hasAttribute('required');
+        } else {
+            const radioOrCheckboxRequired = questionGroup.querySelector(`input[name="question_${questionId}"][required]`);
+            if (radioOrCheckboxRequired) {
+                originalRequired = true;
+            }
+        }
+        questionGroup.dataset.originalRequired = originalRequired;
+    });
+
 });
 </script>
 

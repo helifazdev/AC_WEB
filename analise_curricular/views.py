@@ -1,6 +1,7 @@
 # analise_curricular/views.py
 
 import os
+import logging
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -12,8 +13,11 @@ from datetime import datetime
 from django.utils import timezone
 from django.http import JsonResponse
 from django.utils.translation import gettext_lazy as _
-from .forms import DynamicCandidatoForm, AvaliadorSignUpForm, SelecaoForm, DocumentoForm
+# Remova DocumentoForm deste import
+from .forms import DynamicCandidatoForm, AvaliadorSignUpForm, SelecaoForm
 from .models import Candidato, Selecao, DocumentoCandidato, FormQuestion
+
+logger = logging.getLogger(__name__)
 
 def inscricao_finalizada(request):
     return render(request, 'Registration/inscricao_finalizada.html')
@@ -31,78 +35,74 @@ def analisar_candidato(request, candidato_id):
     
     if not selecao_id:
         logger.error("Nenhum selecao_id encontrado na sessão")
+        messages.error(request, "Por favor, selecione uma seleção antes de analisar candidatos.")
         return redirect('selecionar_selecao')
     
-    # 1. Verificação inicial da sessão
-    selecao_id = request.session.get('selecao_id')
-    if not selecao_id:
-        return redirect('selecionar_selecao')
-
-    # 2. Obter candidato e verificar se pertence à seleção
     try:
         candidato = Candidato.objects.get(pk=candidato_id, selecao__id=selecao_id)
     except Candidato.DoesNotExist:
+        messages.error(request, "Candidato não encontrado ou não pertence à seleção atual.")
+        return redirect('painel_avaliador', selecao_id=selecao_id)
+    except Exception as e:
+        logger.error(f"Erro ao buscar candidato: {e}")
+        messages.error(request, "Ocorreu um erro ao carregar o candidato.")
         return redirect('selecionar_selecao')
 
-    # 3. Obter lista de candidatos da seleção
     candidatos_da_selecao = Candidato.objects.filter(selecao__id=selecao_id).order_by('id')
     total_candidatos = candidatos_da_selecao.count()
 
     if total_candidatos == 0:
-        return render(request, 'Registration/sem_candidatos_na_selecao.html', {
+        return render(request, 'Registration/sem_candidatos_nao_selecao.html', {
             'selecao_nome': request.session.get('selecao_nome', 'Nenhuma Seleção Selecionada')
         })
 
-    # 4. Processar documentos do candidato
-    # Buscar documentos do candidato
+    # 4. Processar documentos do candidato - AGORA SOMENTE LENDO DO DIRETÓRIO
     documentos_candidato = []
+    # Usar a inscrição do candidato para formar o padrão de busca no nome do arquivo
+    # Remove qualquer '#' do início da inscrição, se houver, para a busca
+    inscricao_limpa = candidato.inscricao.lstrip('#') 
+    
     documentos_dir = os.path.join(settings.MEDIA_ROOT, 'candidatos_documentos')
     
     if os.path.exists(documentos_dir):
-            for filename in os.listdir(documentos_dir):
-                # Verifica se o nome segue o padrão e corresponde à inscrição do candidato
-                partes = filename.split('_')
-                if len(partes) >= 3 and partes[1] == str(candidato.inscricao):
-                    document_url = settings.MEDIA_URL + 'candidatos_documentos/' + filename
-                    documentos_candidato.append({
-                        'tipo': partes[0],
-                        'nome': filename,
-                        'url': document_url,
-                    })
+        for filename in os.listdir(documentos_dir):
+            # Verifica se a inscrição do candidato (limpa) está presente no nome do arquivo
+            # Ex: 'Pergunta1_105500_fdpffgf' -> busca por '105500'
+            if f'_{inscricao_limpa}_' in filename:
+                document_url = settings.MEDIA_URL + 'candidatos_documentos/' + filename
+                documentos_candidato.append({
+                    'nome': filename,
+                    'url': document_url,
+                })
 
     # 5. Processar POST request
     if request.method == 'POST':
         form = DynamicCandidatoForm(
             request.POST, 
             instance=candidato,
-            selecao_id=selecao_id)
+            selecao_id=selecao_id
+        )
         if form.is_valid():
-            form.save()
             candidato = form.save(commit=False)
             candidato.analisado = True
-            candidato.data_analisado = timezone.now()  # Adiciona a data atual
-            candidato.avaliador_analise = request.user  # Adiciona o usuário logado
-
-            # Processar respostas dinâmicas
-            for key, value in form.cleaned_data.items():
-                if key.startswith('question_'):
-                    question_id = key.replace('question_', '')
-                    # Aqui você pode salvar as respostas em um modelo separado
-                    # ou em um JSONField no modelo Candidato
-
+            candidato.data_analisado = timezone.now()
+            candidato.avaliador_analise = request.user
             candidato.save()
 
+            messages.success(request, "Dados salvos com sucesso!")
+
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'success': True})
+                return JsonResponse({'success': True, 'message': 'Dados salvos com sucesso!'})
             
             next_candidato = candidatos_da_selecao.filter(id__gt=candidato.id).order_by('id').first()
             if next_candidato:
                 return redirect('analisar_candidato', candidato_id=next_candidato.id)
-
-            return redirect('finalizar_analise')  # Redirecionamento fora do bloco if
-        elif request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'success': False, 'errors': form.errors})
-        # Se não for AJAX e o form for inválido, continua para mostrar os erros
+            
+            return redirect('finalizar_analise') 
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'errors': form.errors})
+            messages.error(request, "Por favor, corrija os erros no formulário.")
     else:
          form = DynamicCandidatoForm(
             instance=candidato,
@@ -114,11 +114,15 @@ def analisar_candidato(request, candidato_id):
     try:
         indice_atual = ids_ordenados.index(candidato.id) + 1
     except ValueError:
-        indice_atual = 1
+        indice_atual = 0
 
-    anterior_candidato = candidatos_da_selecao.filter(id__lt=candidato.id).order_by('-id').first()
+    anterior_candidato = None
+    if indice_atual > 1:
+        anterior_candidato = candidatos_da_selecao.filter(id__lt=candidato.id).order_by('-id').first()
 
-    perguntas = FormQuestion.objects.filter(selecao=candidato.selecao).order_by('order')
+    proximo_candidato = None
+    if indice_atual < total_candidatos:
+        proximo_candidato = candidatos_da_selecao.filter(id__gt=candidato.id).order_by('id').first()
 
     # 7. Preparar contexto final
     context = {
@@ -129,15 +133,16 @@ def analisar_candidato(request, candidato_id):
         'indice_atual': indice_atual,
         'total_candidatos': total_candidatos,
         'anterior_candidato_id': anterior_candidato.id if anterior_candidato else None,
+        'proximo_candidato_id': proximo_candidato.id if proximo_candidato else None,
         'data_formatada': _("Hoje é %(date)s") % {'date': timezone.now().strftime('%d de %B de %Y')},
         'documentos_candidato': documentos_candidato,
-        'documentos_dir': settings.MEDIA_URL + 'candidatos_documentos/',
-        'data_avaliacao': candidato.data_analisado,  # Adiciona ao contexto
-        'avaliador': candidato.avaliador_analise,     # Adiciona ao contexto
-        'perguntas': perguntas
+        'data_avaliacao': candidato.data_analisado,
+        'avaliador': candidato.avaliador_analise,
+        'perguntas': FormQuestion.objects.filter(selecao=candidato.selecao).order_by('order')
     }
 
     return render(request, 'Registration/formulario.html', context)
+
 
 @login_required
 def finalizar_analise(request):
@@ -155,7 +160,7 @@ def user_login(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('selecionar_selecao')  # Redirect to selection page
+                return redirect('selecionar_selecao')
             else:
                 form.add_error(None, "Usuário ou senha inválidos.")
     else:
@@ -174,43 +179,14 @@ def selecionar_selecao(request):
             selecao_escolhida = form.cleaned_data['selecao_disponivel']
             request.session['selecao_id'] = selecao_escolhida.id
             request.session['selecao_nome'] = selecao_escolhida.nome
-            # CRUCIAL CHANGE: Pass selecao_id as an argument to the URL
             return redirect('painel_avaliador', selecao_id=selecao_escolhida.id)
     else:
         form = SelecaoForm()
     
     return render(request, 'Registration/selecionar_selecao.html', {'form': form})
 
-def upload_documento(request, candidato_id):
-    candidato = get_object_or_404(Candidato, pk=candidato_id)
-    
-    if request.method == 'POST':
-        form = DocumentoForm(request.POST, request.FILES)
-        if form.is_valid():
-            documento = form.save(commit=False)
-            documento.candidato = candidato
-            documento.save()
-            messages.success(request, "Documento enviado com sucesso!")
-            return redirect('analisar_candidato', candidato_id=candidato.id)
-    else:
-        form = DocumentoForm()
-    
-    return render(request, 'upload_documento.html', {
-        'form': form,
-        'candidato': candidato
-    })
-
-@login_required
-def deletar_documento(request, documento_id):
-    documento = get_object_or_404(DocumentoCandidato, pk=documento_id)
-    candidato_id = documento.candidato.id
-    
-    if request.method == 'POST':
-        documento.delete()
-        messages.success(request, "Documento excluído com sucesso!")
-        return redirect('upload_documento', candidato_id=candidato_id)
-    
-    return render(request, 'confirmar_delete.html', {'documento': documento})
+# As views upload_documento e deletar_documento não são mais necessárias e foram removidas.
+# O modelo DocumentoCandidato pode ser removido se não for usado para mais nada.
 
 def avaliador_signup(request):
     if request.method == 'POST':
@@ -218,7 +194,7 @@ def avaliador_signup(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('inscricao_finalizada')  # Redireciona para a página de confirmação
+            return redirect('inscricao_finalizada')
     else:
         form = AvaliadorSignUpForm()
     return render(request, 'Registration/signup.html', {'form': form})
@@ -226,9 +202,8 @@ def avaliador_signup(request):
 @login_required
 def painel_avaliador(request, selecao_id):
     selecao = get_object_or_404(Selecao, pk=selecao_id)
-    candidatos = Candidato.objects.filter(selecao=selecao).order_by('inscricao')  # Note o campo 'inscricao'
+    candidatos = Candidato.objects.filter(selecao=selecao).order_by('inscricao')
 
-    # Filtros
     nome_filtro = request.GET.get('nome_filtro')
     inscricao_filtro = request.GET.get('inscricao')
     cargo_filtro = request.GET.get('cargo')
@@ -237,7 +212,6 @@ def painel_avaliador(request, selecao_id):
         candidatos = candidatos.filter(nome__icontains=nome_filtro)
     
     if inscricao_filtro:
-        # Busca exata para inscrição (case insensitive)
         inscricao_limpa = ''.join(c for c in inscricao_filtro if c.isdigit())
         candidatos = candidatos.filter(inscricao__endswith=inscricao_limpa)
     
@@ -256,11 +230,13 @@ def listar_documentos(request, candidato_id):
     candidato = get_object_or_404(Candidato, pk=candidato_id)
     
     documentos = []
+    inscricao_limpa = candidato.inscricao.lstrip('#') 
     pasta = os.path.join(settings.MEDIA_ROOT, 'candidatos_documentos')
     
     if os.path.exists(pasta):
         for arquivo in os.listdir(pasta):
-            if f"_{candidato.inscricao.lstrip('#')}_" in arquivo:
+            # Verifica se a inscrição do candidato está no nome do arquivo
+            if f'_{inscricao_limpa}_' in arquivo:
                 documentos.append({
                     'nome': arquivo,
                     'url': os.path.join(settings.MEDIA_URL, 'candidatos_documentos', arquivo)
@@ -270,7 +246,3 @@ def listar_documentos(request, candidato_id):
         'candidato': candidato,
         'documentos': documentos
     })
-
-import logging
-logger = logging.getLogger(__name__)
-

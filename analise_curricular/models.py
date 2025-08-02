@@ -1,10 +1,11 @@
+# analise_curricular/models.py
+
 from django.db import models
 from datetime import date
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth import get_user_model
 import os
-from django.db import models
 from django.db.models import JSONField 
 
 User = get_user_model()
@@ -14,28 +15,22 @@ class Selecao(models.Model):
     descricao = models.TextField(blank=True, verbose_name="Descrição")
     ativa = models.BooleanField(default=True, verbose_name="Ativa para Avaliação")
     
-    # Mantive exatamente como você tinha definido
     def __str__(self):
         return self.nome
 
     class Meta:
         verbose_name = "Seleção"
         verbose_name_plural = "Seleções"
-        # Adicionei ordering para padronizar a exibição
         ordering = ['nome']
 
 class Candidato(models.Model):
-    REQUISITO_OPCOES = [
+    # Removidas as opções REQUISITO_OPCOES e AVALIACAO_OPCOES,
+    # pois agora serão tratadas via FormQuestion
+    
+    # NOVAS OPÇÕES PARA DEFICIÊNCIA
+    SIM_NAO_CHOICES = [
         ('Sim', 'Sim'),
         ('Nao', 'Não'),
-    ]
-    
-    AVALIACAO_OPCOES = [
-        ('Graduacao', 'Graduação'),
-        ('Especializacao', 'Especialização'),
-        ('Mestrado', 'Mestrado'),
-        ('Doutorado', 'Doutorado'),
-        ('Nao possui', 'Não possui'),
     ]
 
     selecao = models.ForeignKey(
@@ -43,43 +38,17 @@ class Candidato(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='candidatos_da_selecao', # Mantido o nome que você escolheu
+        related_name='candidatos_da_selecao',
         verbose_name="Seleção"
     )
     
-    # Dados Pessoais (mantidos exatamente como você definiu)
+    # Dados Pessoais
     nome = models.CharField(max_length=255, verbose_name="Nome do Candidato")
     inscricao = models.CharField(max_length=50, unique=True, verbose_name="Número de Inscrição")
     cargo = models.CharField(max_length=100, verbose_name="Cargo/Função")
 
-    # Campos de análise (mantida sua estrutura original)
-    requisito = models.CharField(
-        max_length=3,
-        choices=REQUISITO_OPCOES,
-        blank=True,
-        null=True,
-        verbose_name="Possui Requisitos para o Cargo"
-    )
-    
-    avaliacao = models.CharField(
-        max_length=15,
-        choices=AVALIACAO_OPCOES,
-        blank=True,
-        null=True,
-        verbose_name="Avaliação Curricular"
-    )
-    
-    justificativa = models.TextField( # Mudei para TextField mas mantendo sua lógica
-        blank=True,
-        null=True,
-        verbose_name="Justificativa (se 'Não possui')"
-    )
-    
-    observacao = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name="Observações Adicionais"
-    )
+    # REMOVIDOS os campos fixos de análise (requisito, avaliacao, justificativa, observacao)
+    # Eles serão agora parte das perguntas dinâmicas salvas em respostas_dinamicas
     
     pontuacao = models.IntegerField(
         default=0,
@@ -109,37 +78,66 @@ class Candidato(models.Model):
         verbose_name="Analisado"
     )
 
+    respostas_dinamicas = JSONField(default=dict, blank=True, null=True) 
+
+    # NOVOS CAMPOS PARA DEFICIÊNCIA
+    declarou_deficiencia = models.CharField(
+        max_length=3,
+        choices=SIM_NAO_CHOICES,
+        default='Nao', # Valor padrão, pode ser ajustado
+        verbose_name="Declarou que possui deficiência?"
+    )
+    tipo_deficiencia = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Tipo de Deficiência"
+    )
+
+
     def save(self, *args, **kwargs):
+        # A lógica de pontuação ainda pode ser baseada em 'avaliacao' ou em um campo dinâmico
+        # Para calcular pontuação de campo dinâmico 'avaliacao':
+        avaliacao_question = FormQuestion.objects.filter(
+            selecao=self.selecao,
+            question_text__icontains="Avaliação Curricular" # Ou outro nome que você usar para a pergunta de avaliação
+        ).first()
+
+        if avaliacao_question and self.respostas_dinamicas:
+            avaliacao_valor_dinamico = self.respostas_dinamicas.get(str(avaliacao_question.id))
+            pontuacoes = {
+                "Graduacao": 20,
+                "Especializacao": 40,
+                "Mestrado": 60,
+                "Doutorado": 100,
+                "PosDoc": 120, # Adicionado PosDoc
+                "Nao possui": 0
+            }
+            self.pontuacao = pontuacoes.get(avaliacao_valor_dinamico, 0)
+        else:
+            # Manter pontuação 0 se a pergunta de avaliação não for encontrada ou não houver resposta
+            self.pontuacao = 0 
+        
         if self.analisado and not self.data_analisado:
             self.data_analisado = timezone.now()
-            if not self.avaliador_analise:
-                self.avaliador_analise = kwargs.pop('avaliador', None)
+            if not self.avaliador_analise and 'avaliador' in kwargs: 
+                self.avaliador_analise = kwargs.pop('avaliador')
+            elif not self.avaliador_analise: # Garante que sempre terá um avaliador se for analisado
+                self.avaliador_analise = kwargs.get('request_user') # Passar request.user aqui ou no save
+
         super().save(*args, **kwargs)
    
     class Meta:
         verbose_name = "Candidato"
         verbose_name_plural = "Candidatos"
-        ordering = ['nome', 'cargo'] # Mantido seu ordering original
+        ordering = ['nome', 'cargo']
 
     def __str__(self):
         return f"{self.nome} - {self.cargo} ({self.inscricao})"
 
-    def calcular_pontuacao(self):
-        """Mantido seu método original com pequena otimização"""
-        pontuacoes = {
-            "Graduacao": 20,
-            "Especializacao": 40,
-            "Mestrado": 60,
-            "Doutorado": 100,
-            "Nao possui": 0
-        }
-        self.pontuacao = pontuacoes.get(self.avaliacao, 0)
-        return self.pontuacao
+    # O método calcular_pontuacao foi integrado ao save() para garantir que seja chamado
+    # def calcular_pontuacao(self):
+    #     ... (lógica movida para save) ...
 
-    def save(self, *args, **kwargs):
-        """Mantida sua lógica original de save"""
-        self.calcular_pontuacao()
-        super().save(*args, **kwargs)
 
 class DocumentoCandidato(models.Model):
     TIPO_CHOICES = [
@@ -164,7 +162,6 @@ class DocumentoCandidato(models.Model):
         return f"{self.get_tipo_display()} - {self.candidato.nome}"
 
     def delete(self, *args, **kwargs):
-        """Deleta o arquivo físico quando o modelo é apagado"""
         self.arquivo.delete()
         super().delete(*args, **kwargs)
 
@@ -176,6 +173,7 @@ class FormQuestion(models.Model):
         ('select', 'Seleção'),
         ('checkbox', 'Checkbox'),
         ('radio', 'Rádio'),
+        ('textarea', 'Caixa de Texto Grande'), 
     )
     
     selecao = models.ForeignKey(
@@ -187,8 +185,8 @@ class FormQuestion(models.Model):
     question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
     order = models.PositiveIntegerField(default=0)
     required = models.BooleanField(default=True)
-    options = JSONField(blank=True, null=True)  # Para perguntas de seleção
-    conditions = JSONField(blank=True, null=True)  # Para lógicas condicionais
+    options = JSONField(blank=True, null=True)
+    conditions = JSONField(blank=True, null=True)
     
     class Meta:
         ordering = ['order']
